@@ -25,7 +25,6 @@ type Config struct {
 	PiShockUsername string      `yaml:"pishock_username"`
 	PiShockAPIKey   string      `yaml:"pishock_api_key"`
 	PiShockAppName  string      `yaml:"pishock_app_name"`
-	GamePath        string      `yaml:"game_path"` // Path to the RPG Maker game folder
 	Pets            []PetConfig `yaml:"pets" validate:"dive"`
 }
 
@@ -35,7 +34,6 @@ func DefaultConfig() *Config {
 		PiShockUsername: "YourUsername",
 		PiShockAPIKey:   "your-api-key-here",
 		PiShockAppName:  "GolangPetController",
-		GamePath:        "",
 		Pets: []PetConfig{
 			{
 				Name:      "DefaultShock",

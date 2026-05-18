@@ -70,7 +70,6 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 					Title("Configuration Menu").
 					Description("Choose an option to configure:").
 					Options(
-						huh.NewOption("Game Path (Current: "+manager.Get().GamePath+")", "path"),
 						huh.NewOption("General Settings", "general"),
 						huh.NewOption("Manage Pets", "pets"),
 						huh.NewOption("Save & Return", "save"),
@@ -93,28 +92,11 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 			return
 		}
 
-		if action == "path" {
-			editGamePath(manager)
-		} else if action == "general" {
+		if action == "general" {
 			editGeneralConfig(manager)
 		} else if action == "pets" {
 			editPetsConfig(manager)
 		}
-	}
-}
-
-func editGamePath(manager *config.ConfigManager) {
-	cfg := manager.Get()
-	
-	// Use the new directory picker
-	fmt.Println("Launching directory picker...")
-	newPath := cli.RunDirPicker(cfg.GamePath)
-	
-	if newPath != cfg.GamePath {
-		manager.Update(func(c *config.Config) { c.GamePath = newPath })
-		fmt.Printf("Game path updated to: %s\n", newPath)
-	} else {
-		fmt.Println("Game path unchanged.")
 	}
 }
 
@@ -278,9 +260,7 @@ func runPetForm(pet *config.PetConfig) bool {
 }
 
 func runModCheck(manager *config.ConfigManager) {
-	cfg := manager.Get()
-
-	_, message := mod.CheckInstallation(cfg.GamePath)
+	_, message := mod.CheckInstallation()
 
 	form := huh.NewForm(
 		huh.NewGroup(

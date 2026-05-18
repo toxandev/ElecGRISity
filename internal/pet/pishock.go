@@ -14,7 +14,7 @@ const (
 	OpBeep    = 2
 )
 
-// PiShockPet implémente l'interface Pet pour un appareil PiShock
+// PiShockPet implements the Pet interface for a PiShock device
 type PiShockPet struct {
 	Name      string
 	ShareCode string
@@ -23,7 +23,7 @@ type PiShockPet struct {
 	AppName   string
 }
 
-// apiPayload est le format JSON requis par PiShock
+// apiPayload is the JSON format required by PiShock
 type apiPayload struct {
 	Username  string `json:"Username"`
 	APIKey    string `json:"APIKey"`
@@ -43,7 +43,7 @@ func (p *PiShockPet) GetType() string {
 }
 
 func (p *PiShockPet) SendCommand(req CommandRequest) error {
-	op := OpVibrate // Défaut
+	op := OpVibrate // Default
 	switch req.Action {
 	case ActionShock:
 		op = OpShock

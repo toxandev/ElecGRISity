@@ -4,8 +4,8 @@ import (
 	"fmt"
 )
 
-// LovensePet implémente l'interface Pet pour un appareil Lovense
-// (La logique réseau spécifique à Lovense sera ajoutée ici)
+// LovensePet implements the Pet interface for a Lovense device
+// (Lovense-specific network logic will be added here)
 type LovensePet struct {
 	Name      string
 	LovenseID string
@@ -21,21 +21,21 @@ func (p *LovensePet) GetType() string {
 }
 
 func (p *LovensePet) SendCommand(req CommandRequest) error {
-	// À titre d'exemple, on log juste l'intention d'appel.
-	// Il faudra implémenter les requêtes HTTP/WebSocket spécifiques de Lovense.
-	// Lovense ne gère généralement que ActionVibrate, mais on peut mapper le reste.
+	// As an example, we only log the call intent.
+	// Lovense-specific HTTP/WebSocket requests still need to be implemented.
+	// Lovense generally only supports ActionVibrate, but we can map the rest.
 
 	actionName := string(req.Action)
 
-	// Exemple de mock pour l'instant:
+	// Mock example for now:
 	if req.Action == ActionShock {
-		fmt.Printf("Lovense %s: ne supporte pas les chocs, conversion en vibration forte...\n", p.Name)
+		fmt.Printf("Lovense %s: does not support shocks, converting to strong vibration...\n", p.Name)
 		actionName = "vibrate (mapped from shock)"
 	}
 
-	fmt.Printf("Lovense %s: SendCommand simulé : Action=%s, Intensity=%d\n", p.Name, actionName, req.Intensity)
+	fmt.Printf("Lovense %s: simulated SendCommand: Action=%s, Intensity=%d\n", p.Name, actionName, req.Intensity)
 
-	// Implémentation Lovense à faire (requêtes GET/POST sur LovenseIP)
+	// Lovense implementation TODO (GET/POST requests to LovenseIP)
 	// Exemple: http://<LovenseIP>/command?v=1&t=<LovenseID>
 	return nil
 }

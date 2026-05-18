@@ -37,7 +37,7 @@ func main() {
 					Description("Choose an action:").
 					Options(
 						huh.NewOption("⏯️ Start Server", "start"),
-						huh.NewOption("🔍 Check Mod Installation", "check"),
+						huh.NewOption("🔍 Install Mod", "install"),
 						huh.NewOption("⚙ Edit Configuration", "config"),
 						huh.NewOption("✖ Exit", "exit"),
 					).
@@ -53,7 +53,7 @@ func main() {
 
 		if action == "config" {
 			runConfigMenu(manager, cfgFile)
-		} else if action == "check" {
+		} else if action == "install" {
 			runModCheck(manager)
 		} else if action == "start" {
 			runServer(manager)
@@ -134,7 +134,7 @@ func editGeneralConfig(manager *config.ConfigManager) {
 func editPetsConfig(manager *config.ConfigManager) {
 	for {
 		cfg := manager.Get()
-		
+
 		var petOptions []huh.Option[string]
 		for i, pet := range cfg.Pets {
 			petOptions = append(petOptions, huh.NewOption(fmt.Sprintf("%s (%s)", pet.Name, pet.Type), fmt.Sprintf("edit_%d", i)))
@@ -166,10 +166,10 @@ func editPetsConfig(manager *config.ConfigManager) {
 		} else if strings.HasPrefix(action, "edit_") {
 			var idx int
 			fmt.Sscanf(action, "edit_%d", &idx)
-			
+
 			if idx >= 0 && idx < len(cfg.Pets) {
 				petToEdit := cfg.Pets[idx]
-				
+
 				// Ask to edit or delete
 				var subAction string
 				huh.NewForm(
@@ -184,7 +184,7 @@ func editPetsConfig(manager *config.ConfigManager) {
 							Value(&subAction),
 					),
 				).Run()
-				
+
 				if subAction == "edit" {
 					if runPetForm(&petToEdit) {
 						manager.Update(func(c *config.Config) {
@@ -205,7 +205,7 @@ func runPetForm(pet *config.PetConfig) bool {
 	if pet.Type == "" {
 		pet.Type = "pishock"
 	}
-	
+
 	id := pet.ShareCode
 	if pet.Type == "lovense" {
 		id = pet.LovenseID
@@ -260,12 +260,19 @@ func runPetForm(pet *config.PetConfig) bool {
 }
 
 func runModCheck(manager *config.ConfigManager) {
-	_, message := mod.CheckInstallation()
+	err := mod.InstallMod()
+
+	var message string
+	if err != nil {
+		message = fmt.Sprintf("❌ Error installing mod:\n%v", err)
+	} else {
+		message = "✅ Mod successfully installed!"
+	}
 
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewNote().
-				Title("Mod Installation Check").
+				Title("Mod Installation").
 				Description(message),
 		),
 	).WithTheme(huh.ThemeDracula())

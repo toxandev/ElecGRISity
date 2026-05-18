@@ -12,39 +12,60 @@ import (
 var modScript []byte
 
 // ModName is the exact name of the plugin file (without .js extension).
-const ModName = "WalletLogger"
+const ModName = "elecgrisity"
 
-// CheckInstallation verifies if the binary is next to the clickme folder and installs the plugin
-func CheckInstallation() (bool, string) {
+// InstallMod verifies if the binary is next to the game folder, and automatically installs and registers the plugin.
+func InstallMod() error {
 	exePath, err := os.Executable()
 	if err != nil {
-		return false, fmt.Sprintf("❌ Could not determine executable path:\n`%v`", err)
+		return fmt.Errorf("could not determine executable path: %v", err)
 	}
 	exeDir := filepath.Dir(exePath)
 
-	// 1. Check if we are next to clickme/BLOODMONEY.exe
-	gameExePath := filepath.Join(exeDir, "Click Me", "BLOODMONEY!.exe")
+	gameFolder := "Click Me"
+
+	// 1. Check if we are next to Click Me/BLOODMONEY!.exe
+	gameExePath := filepath.Join(exeDir, gameFolder, "BLOODMONEY!.exe")
 	if _, err := os.Stat(gameExePath); os.IsNotExist(err) {
-		return false, fmt.Sprintf("❌ Game not found!\nExpected to find:\n`%s`\nPlease place this program next to the 'clickme' folder.", gameExePath)
+		return fmt.Errorf("game not found. Expected to find it at: %s\nPlease place this program next to the '%s' folder", gameExePath, gameFolder)
 	}
 
 	// 2. Install/Update the mod file
-	modFilePath := filepath.Join(exeDir, "clickme", "www", "js", "plugins", ModName+".js")
+	modFilePath := filepath.Join(exeDir, gameFolder, "www", "js", "plugins", ModName+".js")
+	if err := os.MkdirAll(filepath.Dir(modFilePath), 0755); err != nil {
+		return fmt.Errorf("could not create mod directory: %v", err)
+	}
 	if err := os.WriteFile(modFilePath, modScript, 0644); err != nil {
-		return false, fmt.Sprintf("❌ Could not install mod file:\n`%v`", err)
+		return fmt.Errorf("could not write mod file: %v", err)
 	}
 
 	// 3. Check if registered in plugins.js
-	pluginsJSPath := filepath.Join(exeDir, "clickme", "www", "js", "plugins.js")
+	pluginsJSPath := filepath.Join(exeDir, gameFolder, "www", "js", "plugins.js")
 	content, err := os.ReadFile(pluginsJSPath)
 	if err != nil {
-		return false, fmt.Sprintf("❌ Could not read plugins.js:\n`%s`\nError: %v", pluginsJSPath, err)
+		if os.IsNotExist(err) {
+			// Create a basic plugins.js
+			content = []byte(fmt.Sprintf("var $plugins = [\n{\"name\":\"%s\",\"status\":true,\"description\":\"Smart Event Sender\",\"parameters\":{}}\n];", ModName))
+			if err := os.WriteFile(pluginsJSPath, content, 0644); err != nil {
+				return fmt.Errorf("could not create plugins.js: %v", err)
+			}
+		} else {
+			return fmt.Errorf("could not read plugins.js: %v", err)
+		}
+	} else {
+		// Check if the mod is registered in the plugins list
+		if !strings.Contains(string(content), fmt.Sprintf(`"name":"%s"`, ModName)) && !strings.Contains(string(content), ModName) {
+			// Auto-register it
+			newPlugin := fmt.Sprintf(",\n{\"name\":\"%s\",\"status\":true,\"description\":\"Smart Event Sender\",\"parameters\":{}}\n];", ModName)
+			newContent := strings.Replace(string(content), "\n];", newPlugin, 1)
+			if newContent == string(content) {
+				newContent = strings.Replace(string(content), "];", newPlugin[1:], 1)
+			}
+			if err := os.WriteFile(pluginsJSPath, []byte(newContent), 0644); err != nil {
+				return fmt.Errorf("could not update plugins.js: %v", err)
+			}
+		}
 	}
 
-	// Check if the mod is registered in the plugins list
-	if !strings.Contains(string(content), fmt.Sprintf(`"name":"%s"`, ModName)) && !strings.Contains(string(content), ModName) {
-		return false, fmt.Sprintf("❌ Mod file is installed, but it is NOT enabled in RPG Maker!\nPlease open RPG Maker Plugin Manager, add '%s', and turn it ON. Or add it to plugins.js manually.", ModName)
-	}
-
-	return true, fmt.Sprintf("✅ Mod '%s' is correctly installed and registered in plugins.js!", ModName)
+	return nil
 }

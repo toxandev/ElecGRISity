@@ -1,6 +1,6 @@
 package pet
 
-// ActionType définit le type d'action (choc, vibration, bip)
+// ActionType defines the action type (shock, vibration, beep)
 type ActionType string
 
 const (
@@ -9,14 +9,14 @@ const (
 	ActionBeep    ActionType = "beep"
 )
 
-// CommandRequest standardise une requête pour n'importe quel pet
+// CommandRequest standardizes a request for any pet
 type CommandRequest struct {
 	Action    ActionType
-	Intensity int // Généralement de 1 à 100
-	Duration  int // En secondes ou millisecondes, adapté par l'implémentation
+	Intensity int // Generally from 1 to 100
+	Duration  int // In seconds or milliseconds, adjusted by the implementation
 }
 
-// Pet est l'interface commune pour tous les appareils
+// Pet is the common interface for all devices
 type Pet interface {
 	SendCommand(req CommandRequest) error
 	GetName() string

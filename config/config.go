@@ -15,9 +15,9 @@ var validate = validator.New()
 type PetConfig struct {
 	Name      string `yaml:"name" validate:"required"`
 	Type      string `yaml:"type" validate:"required,oneof=pishock lovense"`
-	ShareCode string `yaml:"share_code,omitempty"` // Pour PiShock
-	LovenseID string `yaml:"lovense_id,omitempty"` // Pour Lovense
-	LovenseIP string `yaml:"lovense_ip,omitempty"` // Pour Lovense (IP locale)
+	ShareCode string `yaml:"share_code,omitempty"` // For PiShock
+	LovenseID string `yaml:"lovense_id,omitempty"` // For Lovense
+	LovenseIP string `yaml:"lovense_ip,omitempty"` // For Lovense (local IP)
 }
 
 type Config struct {

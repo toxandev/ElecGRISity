@@ -1,22 +1,22 @@
 /*:
- * @plugindesc Smart Event Sender - Envoie des événements télémétriques à une API Go locale.
+ * @plugindesc Smart Event Sender - Sends telemetry events to a local Go API.
  * @help
- * Ce plugin (anciennement WalletLogger) écoute le moteur du jeu et envoie
- * les événements suivants via des requêtes PUT :
+ * This plugin (formerly WalletLogger) listens to the game engine and sends
+ * the following events via PUT requests:
  * - shop_open
  * - shop_close
  * - money_add
  * - money_remove
  * - item_buy
  *
- * Les requêtes sont envoyées au serveur local avec un JSON structuré.
+ * Requests are sent to the local server with structured JSON.
  *
  * @param API URL
- * @desc L'URL de l'API locale en Go
+ * @desc The URL of the local Go API
  * @default http://localhost:8080/event
  *
  * @param Wallet Variable ID
- * @desc L'ID de la variable gérant l'argent du joueur
+ * @desc The ID of the variable managing the player's money
  * @default 1
  */
 
@@ -28,24 +28,24 @@
   var walletVariableId = Number(parameters["Wallet Variable ID"] || 1);
 
   // ======================================================================
-  // Configuration Modulaire
+  // Modular Configuration
   // ======================================================================
-  // Vous pouvez facilement ajouter de nouveaux Common Events ici.
+  // You can easily add new Common Events here.
   var CommonEventTriggers = {
     1: "shop_open",
     2: "shop_close",
   };
 
-  // IDs des Common Events correspondants à un achat de boutique
+  // Common Event IDs corresponding to a shop purchase
   var ShopPurchaseEvents = [7, 8, 9, 10, 11, 12, 13];
 
   // ======================================================================
-  // Hook : Démarrage du plugin et de la partie
+  // Hook: Plugin and game startup
   // ======================================================================
-  // Quand le script est lu (le moteur démarre)
+  // When the script is read (the engine starts)
   sendTelemetry("plugin_loaded", 0, { status: "ready" });
 
-  // Remplacer DataManager par Scene_Title pour "New Game"
+  // Replace DataManager with Scene_Title for "New Game"
   var _Scene_Title_commandNewGame = Scene_Title.prototype.commandNewGame;
   Scene_Title.prototype.commandNewGame = function () {
     _Scene_Title_commandNewGame.call(this);
@@ -53,7 +53,7 @@
     sendTelemetry("game_started", startBalance, { type: "new_game" });
   };
 
-  // Remplacer DataManager par Scene_Load pour "Load Game"
+  // Replace DataManager with Scene_Load for "Load Game"
   var _Scene_Load_onLoadSuccess = Scene_Load.prototype.onLoadSuccess;
   Scene_Load.prototype.onLoadSuccess = function () {
     _Scene_Load_onLoadSuccess.call(this);
@@ -62,7 +62,7 @@
   };
 
   // ======================================================================
-  // Fonction d'envoi vers l'API Go
+  // Send function to the Go API
   // ======================================================================
   function sendTelemetry(eventName, balance, extraData) {
     var payload = {
@@ -71,10 +71,10 @@
       details: extraData || {},
     };
 
-    // Mode debug en console
-    console.log("[SmartEventSender] Envoi de l'événement:", eventName, payload);
+    // Console debug mode
+    console.log("[SmartEventSender] Sending event:", eventName, payload);
 
-    // Requête asynchrone non-bloquante pour le jeu
+    // Non-blocking async request for the game
     fetch(apiUrl, {
       method: "PUT",
       headers: {
@@ -82,16 +82,16 @@
       },
       body: JSON.stringify(payload),
     }).catch(function (error) {
-      // Silencieux si le serveur n'est pas lancé
+      // Silent if the server is not running
       console.warn(
-        "[SmartEventSender] Serveur Go non joignable (attendu si éteint) :",
+        "[SmartEventSender] Go server unreachable (expected if off):",
         error.message,
       );
     });
   }
 
   // ======================================================================
-  // Hook 1 & 2 : Interception du démarrage des événements communs
+  // Hook 1 & 2: Intercept common event start
   // ======================================================================
   function handleCommonEventStart(eventId) {
     var currentBalance = $gameVariables.value(walletVariableId);
@@ -130,7 +130,7 @@
   };
 
   // ======================================================================
-  // Hook 3 : Suivi du contexte lors de la commande 122 (Variables)
+  // Hook 3: Track context during command 122 (Variables)
   // ======================================================================
   var _Game_Interpreter_command122 = Game_Interpreter.prototype.command122;
   Game_Interpreter.prototype.command122 = function () {
@@ -145,7 +145,7 @@
   };
 
   // ======================================================================
-  // Hook 4 : Interception du changement de portefeuille
+  // Hook 4: Intercept wallet changes
   // ======================================================================
   var _Game_Variables_setValue = Game_Variables.prototype.setValue;
   Game_Variables.prototype.setValue = function (variableId, value) {
@@ -154,11 +154,11 @@
 
     if (variableId === walletVariableId) {
       var diff = this.value(variableId) - oldValue;
-      if (diff === 0) return; // Pas de changement réel
+      if (diff === 0) return; // No real change
 
       var currentBalance = this.value(variableId);
 
-      // Récupérer le contexte (Dans quel Common Event sommes-nous ?)
+      // Get context (which Common Event are we in?)
       var interpreter =
         $gameTemp && $gameTemp._wl_activeInterpreter
           ? $gameTemp._wl_activeInterpreter
@@ -170,7 +170,7 @@
         commonEventId: currentCeId,
       };
 
-      // Classification intelligente de l'événement
+      // Smart event classification
       if (diff < 0 && ShopPurchaseEvents.includes(currentCeId)) {
         sendTelemetry("item_buy", currentBalance, details);
       } else if (diff < 0) {

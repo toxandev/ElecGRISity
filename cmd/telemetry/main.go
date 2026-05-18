@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -15,6 +14,8 @@ import (
 	"telemetry-server/internal/pet"
 	"telemetry-server/internal/server"
 )
+
+const serverPort = 69420
 
 func main() {
 	cfgFile := "config.yaml"
@@ -62,7 +63,6 @@ func main() {
 func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 	cfg := manager.Get()
 
-	portStr := strconv.Itoa(cfg.ServerPort)
 	logLevel := cfg.LogLevel
 	pUser := cfg.PiShockUsername
 	pKey := cfg.PiShockAPIKey
@@ -72,7 +72,6 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 	// Display configuration pane
 	form := huh.NewForm(
 		huh.NewGroup(
-			huh.NewInput().Title("Server Port").Value(&portStr),
 			huh.NewSelect[string]().Title("Log Level").Options(
 				huh.NewOption("Debug", "debug"),
 				huh.NewOption("Info", "info"),
@@ -90,14 +89,8 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 		return // User cancelled or hit ESC
 	}
 
-	port, err := strconv.Atoi(portStr)
-	if err != nil {
-		port = 8080 // fallback if invalid string typed
-	}
-
 	// Update the configuration safely
 	err = manager.Update(func(c *config.Config) {
-		c.ServerPort = port
 		c.LogLevel = logLevel
 		c.PiShockUsername = pUser
 		c.PiShockAPIKey = pKey
@@ -160,7 +153,7 @@ func runServer(manager *config.ConfigManager) {
 		}
 	}
 
-	srv := server.NewServer(cfg.ServerPort, pets, logChan)
+	srv := server.NewServer(serverPort, pets, logChan)
 
 	// Context for graceful shutdown when we exit Bubbletea
 	ctx, cancel := context.WithCancel(context.Background())
@@ -177,7 +170,7 @@ func runServer(manager *config.ConfigManager) {
 	m := cli.NewModel(logChan)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
-	logChan <- fmt.Sprintf("Server initialized on port %d...", cfg.ServerPort)
+	logChan <- fmt.Sprintf("Server initialized on port %d...", serverPort)
 
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error running UI: %v\n", err)

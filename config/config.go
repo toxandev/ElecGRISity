@@ -21,7 +21,6 @@ type PetConfig struct {
 }
 
 type Config struct {
-	ServerPort      int         `yaml:"server_port" validate:"required,min=1,max=65535"`
 	LogLevel        string      `yaml:"log_level" validate:"required,oneof=debug info warn error"`
 	PiShockUsername string      `yaml:"pishock_username"`
 	PiShockAPIKey   string      `yaml:"pishock_api_key"`
@@ -32,7 +31,6 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
-		ServerPort:      8080,
 		LogLevel:        "info",
 		PiShockUsername: "YourUsername",
 		PiShockAPIKey:   "your-api-key-here",

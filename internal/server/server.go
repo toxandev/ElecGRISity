@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"telemetry-server/internal/pet"
 )
@@ -44,16 +45,22 @@ func (s *Server) Start(ctx context.Context) error {
 		srv.Close()
 	}()
 
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		s.logChannel <- fmt.Sprintf("❌ Failed to bind %s: %v", addr, err)
+		return err
+	}
+
 	s.logChannel <- fmt.Sprintf("Listening for game telemetry on %s", addr)
 
-	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
 		return err
 	}
 	return nil
 }
 
 func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodPost && r.Method != http.MethodPut {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}

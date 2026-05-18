@@ -13,7 +13,7 @@
  *
  * @param API URL
  * @desc The URL of the local Go API
- * @default http://localhost:8080/event
+ * @default http://localhost:69420/event
  *
  * @param Wallet Variable ID
  * @desc The ID of the variable managing the player's money
@@ -24,7 +24,7 @@
   "use strict";
 
   var parameters = PluginManager.parameters("WalletLogger");
-  var apiUrl = parameters["API URL"] || "http://localhost:8080/event";
+  var apiUrl = parameters["API URL"] || "http://localhost:69420/event";
   var walletVariableId = Number(parameters["Wallet Variable ID"] || 1);
 
   // ======================================================================

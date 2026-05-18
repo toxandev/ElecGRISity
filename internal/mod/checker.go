@@ -25,7 +25,7 @@ func CheckInstallation() (bool, string) {
 	// 1. Check if we are next to clickme/BLOODMONEY.exe
 	gameExePath := filepath.Join(exeDir, "clickme", "BLOODMONEY.exe")
 	if _, err := os.Stat(gameExePath); os.IsNotExist(err) {
-		return false, fmt.Sprintf("❌ Game not found!\nExpected to find:\n%s\nPlease place this program next to the 'clickme' folder.", gameExePath)
+		return false, fmt.Sprintf("❌ Game not found!\nExpected to find:\n`%s`\nPlease place this program next to the 'clickme' folder.", gameExePath)
 	}
 
 	// 2. Install/Update the mod file
@@ -38,7 +38,7 @@ func CheckInstallation() (bool, string) {
 	pluginsJSPath := filepath.Join(exeDir, "clickme", "www", "js", "plugins.js")
 	content, err := os.ReadFile(pluginsJSPath)
 	if err != nil {
-		return false, fmt.Sprintf("❌ Could not read plugins.js:\n%s\nError: %v", pluginsJSPath, err)
+		return false, fmt.Sprintf("❌ Could not read plugins.js:\n`%s`\nError: %v", pluginsJSPath, err)
 	}
 
 	// Check if the mod is registered in the plugins list

@@ -61,15 +61,69 @@ func main() {
 }
 
 func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
-	cfg := manager.Get()
+	for {
+		var action string
+		form := huh.NewForm(
+			huh.NewGroup(
+				huh.NewSelect[string]().
+					Title("Configuration Menu").
+					Description("Choose an option to configure:").
+					Options(
+						huh.NewOption("Game Path (Current: "+manager.Get().GamePath+")", "path"),
+						huh.NewOption("General Settings", "general"),
+						huh.NewOption("Manage Pets", "pets"),
+						huh.NewOption("Save & Return", "save"),
+						huh.NewOption("Cancel", "cancel"),
+					).
+					Value(&action),
+			),
+		)
 
+		if err := form.Run(); err != nil || action == "cancel" {
+			return
+		}
+
+		if action == "save" {
+			if err := manager.Save(cfgFile); err != nil {
+				fmt.Printf("\nError saving config: %v\n", err)
+			} else {
+				fmt.Println("\nConfiguration saved successfully!")
+			}
+			return
+		}
+
+		if action == "path" {
+			editGamePath(manager)
+		} else if action == "general" {
+			editGeneralConfig(manager)
+		} else if action == "pets" {
+			editPetsConfig(manager)
+		}
+	}
+}
+
+func editGamePath(manager *config.ConfigManager) {
+	cfg := manager.Get()
+	gPath := cfg.GamePath
+
+	// Temporary simple input for now, we'll implement the file picker next
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().Title("RPG Maker Game Path").Value(&gPath),
+		),
+	)
+	if err := form.Run(); err == nil {
+		manager.Update(func(c *config.Config) { c.GamePath = gPath })
+	}
+}
+
+func editGeneralConfig(manager *config.ConfigManager) {
+	cfg := manager.Get()
 	logLevel := cfg.LogLevel
 	pUser := cfg.PiShockUsername
 	pKey := cfg.PiShockAPIKey
 	pApp := cfg.PiShockAppName
-	gPath := cfg.GamePath
 
-	// Display configuration pane
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().Title("Log Level").Options(
@@ -78,16 +132,25 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 				huh.NewOption("Warn", "warn"),
 				huh.NewOption("Error", "error"),
 			).Value(&logLevel),
-			huh.NewInput().Title("RPG Maker Game Path (e.g. C:\\Games\\MyGame)").Value(&gPath),
 			huh.NewInput().Title("PiShock Username").Value(&pUser),
 			huh.NewInput().Title("PiShock API Key").Value(&pKey).EchoMode(huh.EchoModePassword),
 			huh.NewInput().Title("PiShock App Name").Value(&pApp),
 		),
 	).WithTheme(huh.ThemeDracula())
 
-	if err := form.Run(); err != nil {
-		return // User cancelled or hit ESC
+	if err := form.Run(); err == nil {
+		manager.Update(func(c *config.Config) {
+			c.LogLevel = logLevel
+			c.PiShockUsername = pUser
+			c.PiShockAPIKey = pKey
+			c.PiShockAppName = pApp
+		})
 	}
+}
+
+func editPetsConfig(manager *config.ConfigManager) {
+	// To be implemented
+}
 
 	// Update the configuration safely
 	err = manager.Update(func(c *config.Config) {

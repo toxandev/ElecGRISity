@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -149,7 +150,131 @@ func editGeneralConfig(manager *config.ConfigManager) {
 }
 
 func editPetsConfig(manager *config.ConfigManager) {
-	// To be implemented
+	for {
+		cfg := manager.Get()
+		
+		var petOptions []huh.Option[string]
+		for i, pet := range cfg.Pets {
+			petOptions = append(petOptions, huh.NewOption(fmt.Sprintf("%s (%s)", pet.Name, pet.Type), fmt.Sprintf("edit_%d", i)))
+		}
+		petOptions = append(petOptions, huh.NewOption("?O Add New Pet", "add"))
+		petOptions = append(petOptions, huh.NewOption("o- Back", "back"))
+
+		var action string
+		form := huh.NewForm(
+			huh.NewGroup(
+				huh.NewSelect[string]().
+					Title("Manage Pets").
+					Options(petOptions...).
+					Value(&action),
+			),
+		)
+
+		if err := form.Run(); err != nil || action == "back" {
+			return
+		}
+
+		if action == "add" {
+			newPet := config.PetConfig{Type: "pishock"}
+			if runPetForm(&newPet) {
+				manager.Update(func(c *config.Config) {
+					c.Pets = append(c.Pets, newPet)
+				})
+			}
+		} else if strings.HasPrefix(action, "edit_") {
+			var idx int
+			fmt.Sscanf(action, "edit_%d", &idx)
+			
+			if idx >= 0 && idx < len(cfg.Pets) {
+				petToEdit := cfg.Pets[idx]
+				
+				// Ask to edit or delete
+				var subAction string
+				huh.NewForm(
+					huh.NewGroup(
+						huh.NewSelect[string]().
+							Title(fmt.Sprintf("Pet: %s", petToEdit.Name)).
+							Options(
+								huh.NewOption("Edit", "edit"),
+								huh.NewOption("Delete", "delete"),
+								huh.NewOption("Cancel", "cancel"),
+							).
+							Value(&subAction),
+					),
+				).Run()
+				
+				if subAction == "edit" {
+					if runPetForm(&petToEdit) {
+						manager.Update(func(c *config.Config) {
+							c.Pets[idx] = petToEdit
+						})
+					}
+				} else if subAction == "delete" {
+					manager.Update(func(c *config.Config) {
+						c.Pets = append(c.Pets[:idx], c.Pets[idx+1:]...)
+					})
+				}
+			}
+		}
+	}
+}
+
+func runPetForm(pet *config.PetConfig) bool {
+	if pet.Type == "" {
+		pet.Type = "pishock"
+	}
+	
+	id := pet.ShareCode
+	if pet.Type == "lovense" {
+		id = pet.LovenseID
+	}
+	secret := pet.LovenseIP // Use LovenseIP for the 'secret' field
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().Title("Name").Value(&pet.Name),
+			huh.NewSelect[string]().
+				Title("Type").
+				Options(
+					huh.NewOption("PiShock", "pishock"),
+					huh.NewOption("Lovense", "lovense"),
+				).
+				Value(&pet.Type),
+		),
+		huh.NewGroup(
+			huh.NewInput().
+				TitleFunc(func() string {
+					if pet.Type == "pishock" {
+						return "Share Code (ID)"
+					}
+					return "Lovense ID (ID)"
+				}, &pet.Type).
+				Value(&id),
+			huh.NewInput().
+				TitleFunc(func() string {
+					if pet.Type == "pishock" {
+						return "Secret (Not used for PiShock)"
+					}
+					return "Lovense IP (Secret)"
+				}, &pet.Type).
+				Value(&secret),
+		),
+	).WithTheme(huh.ThemeDracula())
+
+	err := form.Run()
+	if err == nil {
+		if pet.Type == "pishock" {
+			pet.ShareCode = id
+			pet.LovenseID = ""
+			pet.LovenseIP = ""
+		} else {
+			pet.LovenseID = id
+			pet.LovenseIP = secret
+			pet.ShareCode = ""
+		}
+		return true
+	}
+	return false
 }
 
 func runModCheck(manager *config.ConfigManager) {

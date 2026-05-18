@@ -104,16 +104,16 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 
 func editGamePath(manager *config.ConfigManager) {
 	cfg := manager.Get()
-	gPath := cfg.GamePath
-
-	// Temporary simple input for now, we'll implement the file picker next
-	form := huh.NewForm(
-		huh.NewGroup(
-			huh.NewInput().Title("RPG Maker Game Path").Value(&gPath),
-		),
-	)
-	if err := form.Run(); err == nil {
-		manager.Update(func(c *config.Config) { c.GamePath = gPath })
+	
+	// Use the new directory picker
+	fmt.Println("Launching directory picker...")
+	newPath := cli.RunDirPicker(cfg.GamePath)
+	
+	if newPath != cfg.GamePath {
+		manager.Update(func(c *config.Config) { c.GamePath = newPath })
+		fmt.Printf("Game path updated to: %s\n", newPath)
+	} else {
+		fmt.Println("Game path unchanged.")
 	}
 }
 
@@ -150,28 +150,6 @@ func editGeneralConfig(manager *config.ConfigManager) {
 
 func editPetsConfig(manager *config.ConfigManager) {
 	// To be implemented
-}
-
-	// Update the configuration safely
-	err = manager.Update(func(c *config.Config) {
-		c.LogLevel = logLevel
-		c.PiShockUsername = pUser
-		c.PiShockAPIKey = pKey
-		c.PiShockAppName = pApp
-		c.GamePath = gPath
-	})
-
-	if err != nil {
-		fmt.Printf("\nValidation error: %v\n", err)
-		return
-	}
-
-	// Save to config.yaml
-	if err := manager.Save(cfgFile); err != nil {
-		fmt.Printf("\nError saving config: %v\n", err)
-	} else {
-		fmt.Println("\nConfiguration saved successfully!")
-	}
 }
 
 func runModCheck(manager *config.ConfigManager) {

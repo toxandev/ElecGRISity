@@ -9,7 +9,7 @@ import (
 
 // ModName is the exact name of the plugin file (without .js extension).
 // Change this if your RPG Maker plugin has a different name!
-const ModName = "NAMEOTHEMOD"
+const ModName = "elecgrisity"
 
 // CheckInstallation verifies if the mod is present in the game directory
 func CheckInstallation(gamePath string) (bool, string) {
@@ -18,13 +18,13 @@ func CheckInstallation(gamePath string) (bool, string) {
 	}
 
 	// 1. Check if the mod file exists
-	modFilePath := filepath.Join(gamePath, "www", "js", "plugins", ModName+".js")
+	modFilePath := filepath.Join(gamePath, "Click Me", "www", "js", "plugins", ModName+".js")
 	if _, err := os.Stat(modFilePath); os.IsNotExist(err) {
 		return false, fmt.Sprintf("❌ Mod file not found!\nExpected location:\n%s", modFilePath)
 	}
 
 	// 2. Check if registered in plugins.js
-	pluginsJSPath := filepath.Join(gamePath, "www", "js", "plugins.js")
+	pluginsJSPath := filepath.Join(gamePath, "Click Me", "www", "js", "plugins.js")
 	content, err := os.ReadFile(pluginsJSPath)
 	if err != nil {
 		return false, fmt.Sprintf("❌ Could not read plugins.js:\n%s\nError: %v", pluginsJSPath, err)

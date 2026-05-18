@@ -18,12 +18,12 @@ const ModName = "WalletLogger"
 func CheckInstallation() (bool, string) {
 	exePath, err := os.Executable()
 	if err != nil {
-		return false, fmt.Sprintf("❌ Could not determine executable path:\n%v", err)
+		return false, fmt.Sprintf("❌ Could not determine executable path:\n`%v`", err)
 	}
 	exeDir := filepath.Dir(exePath)
 
 	// 1. Check if we are next to clickme/BLOODMONEY.exe
-	gameExePath := filepath.Join(exeDir, "clickme", "BLOODMONEY.exe")
+	gameExePath := filepath.Join(exeDir, "Click Me", "BLOODMONEY!.exe")
 	if _, err := os.Stat(gameExePath); os.IsNotExist(err) {
 		return false, fmt.Sprintf("❌ Game not found!\nExpected to find:\n`%s`\nPlease place this program next to the 'clickme' folder.", gameExePath)
 	}
@@ -31,7 +31,7 @@ func CheckInstallation() (bool, string) {
 	// 2. Install/Update the mod file
 	modFilePath := filepath.Join(exeDir, "clickme", "www", "js", "plugins", ModName+".js")
 	if err := os.WriteFile(modFilePath, modScript, 0644); err != nil {
-		return false, fmt.Sprintf("❌ Could not install mod file:\n%v", err)
+		return false, fmt.Sprintf("❌ Could not install mod file:\n`%v`", err)
 	}
 
 	// 3. Check if registered in plugins.js

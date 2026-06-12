@@ -2,8 +2,8 @@
 default: build
 
 # Variables
-BIN_NAME := "telemetry-server"
-MAIN_PKG := "cmd/telemetry/main.go"
+BIN_NAME := "elecgrisity-server"
+MAIN_PKG := "cmd/elecgrisity/main.go"
 
 # Build the Go binary
 build:

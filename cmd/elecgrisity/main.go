@@ -12,12 +12,12 @@ import (
 	"telemetry-server/internal/pet"
 	"telemetry-server/internal/plugin"
 	"telemetry-server/internal/telemetry"
-	
+
 	petsview "telemetry-server/internal/tui/views/pets"
 	serverlog "telemetry-server/internal/tui/views/serverlog"
 )
 
-const serverPort = 69420
+const serverPort = 42069
 
 func main() {
 	cfgFile := "config.yaml"
@@ -135,8 +135,8 @@ func editGeneralConfig(manager *config.ConfigManager) {
 func editPetsConfig(manager *config.ConfigManager) {
 	for {
 		m := petsview.NewModel(manager)
-		p := tea.NewProgram(m)
-		
+		p := tea.NewProgram(m, tea.WithAltScreen())
+
 		mod, err := p.Run()
 		if err != nil {
 			fmt.Printf("Error running pet menu: %v\n", err)
@@ -149,7 +149,7 @@ func editPetsConfig(manager *config.ConfigManager) {
 		}
 
 		action := petsModel.GetAction()
-		
+
 		if action == "add" {
 			newPet := config.PetConfig{Type: "pishock"}
 			if runPetForm(&newPet) {

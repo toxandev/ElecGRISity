@@ -1,4 +1,4 @@
-package server
+package telemetry
 
 import (
 	"context"

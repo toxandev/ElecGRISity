@@ -14,6 +14,8 @@ var modScript []byte
 // ModName is the exact name of the plugin file (without .js extension).
 const ModName = "elecgrisity"
 
+var ErrAlreadyInstalled = fmt.Errorf("mod is already installed")
+
 // InstallMod verifies if the binary is next to the game folder, and automatically installs and registers the plugin.
 func InstallMod() error {
 	exePath, err := os.Executable()
@@ -64,6 +66,8 @@ func InstallMod() error {
 			if err := os.WriteFile(pluginsJSPath, []byte(newContent), 0644); err != nil {
 				return fmt.Errorf("could not update plugins.js: %v", err)
 			}
+		} else {
+			return ErrAlreadyInstalled
 		}
 	}
 

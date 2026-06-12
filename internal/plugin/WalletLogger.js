@@ -67,7 +67,7 @@
   function sendTelemetry(eventName, balance, extraData) {
     var payload = {
       event: eventName,
-      balance: balance,
+      value: balance,
       details: extraData || {},
     };
 

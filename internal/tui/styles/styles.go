@@ -28,8 +28,8 @@ var (
 		Width(40)
 
 	SelectedCard = Card.Copy().
-		BorderForeground(lipgloss.Color("#FF76B8")).
-		Background(lipgloss.Color("#2A2A2A"))
+			BorderForeground(lipgloss.Color("#FF76B8")).
+			Background(lipgloss.Color("#2A2A2A"))
 
 	AddCard = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder(), true).
@@ -40,9 +40,9 @@ var (
 		Align(lipgloss.Center)
 
 	SelectedAddCard = AddCard.Copy().
-		BorderForeground(lipgloss.Color("#04B575")).
-		Background(lipgloss.Color("#2A2A2A")).
-		Bold(true)
+			BorderForeground(lipgloss.Color("#04B575")).
+			Background(lipgloss.Color("#2A2A2A")).
+			Bold(true)
 
 	Button = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#FFF")).
@@ -51,14 +51,14 @@ var (
 		MarginRight(1)
 
 	SelectedButton = Button.Copy().
-		Background(lipgloss.Color("#FF76B8")).
-		Bold(true)
+			Background(lipgloss.Color("#FF76B8")).
+			Bold(true)
 
 	DeleteButton = Button.Copy().
-		Background(lipgloss.Color("#E03131"))
+			Background(lipgloss.Color("#E03131"))
 
 	SelectedDeleteButton = DeleteButton.Copy().
-		Bold(true).
-		Foreground(lipgloss.Color("#FFF")).
-		Background(lipgloss.Color("#FF4B4B"))
+				Bold(true).
+				Foreground(lipgloss.Color("#FFF")).
+				Background(lipgloss.Color("#FF4B4B"))
 )

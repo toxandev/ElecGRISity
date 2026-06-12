@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -242,7 +243,9 @@ func runModCheck(manager *config.ConfigManager) {
 	err := plugin.InstallMod()
 
 	var message string
-	if err != nil {
+	if errors.Is(err, plugin.ErrAlreadyInstalled) {
+		message = "✅ Mod is already installed"
+	} else if err != nil {
 		message = fmt.Sprintf("❌ Error installing mod:\n%v", err)
 	} else {
 		message = "✅ Mod successfully installed!"

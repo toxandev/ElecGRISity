@@ -13,8 +13,8 @@ import (
 type Model struct {
 	Manager     *config.ConfigManager
 	Pets        []config.PetConfig
-	cursor      int // 0 to len(pets) (last is add)
-	subCursor   int // 0 for Edit, 1 for Delete
+	cursor      int    // 0 to len(pets) (last is add)
+	subCursor   int    // 0 for Edit, 1 for Delete
 	action      string // "edit", "delete", "add", "back", ""
 	selectedIdx int
 }
@@ -81,13 +81,13 @@ func (m Model) View() string {
 		var content strings.Builder
 		content.WriteString(lipgloss.NewStyle().Bold(true).Render(pet.Name) + "\n")
 		content.WriteString(fmt.Sprintf("Type: %s\n", pet.Type))
-		
+
 		if pet.Type == "pishock" {
 			content.WriteString(fmt.Sprintf("Share Code: %s\n", pet.ShareCode))
 		} else if pet.Type == "lovense" {
 			content.WriteString(fmt.Sprintf("Lovense ID: %s\nIP: %s\n", pet.LovenseID, pet.LovenseIP))
 		}
-		
+
 		content.WriteString("\n")
 
 		editBtn := styles.Button.Render("Edit")

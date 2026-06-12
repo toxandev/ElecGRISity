@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 
-	"telemetry-server/config"
-	"telemetry-server/internal/cli"
-	"telemetry-server/internal/mod"
+	"telemetry-server/internal/config"
 	"telemetry-server/internal/pet"
-	"telemetry-server/internal/server"
+	"telemetry-server/internal/plugin"
+	"telemetry-server/internal/telemetry"
+	
+	petsview "telemetry-server/internal/tui/views/pets"
+	serverlog "telemetry-server/internal/tui/views/serverlog"
 )
 
 const serverPort = 69420
@@ -133,29 +134,22 @@ func editGeneralConfig(manager *config.ConfigManager) {
 
 func editPetsConfig(manager *config.ConfigManager) {
 	for {
-		cfg := manager.Get()
-
-		var petOptions []huh.Option[string]
-		for i, pet := range cfg.Pets {
-			petOptions = append(petOptions, huh.NewOption(fmt.Sprintf("%s (%s)", pet.Name, pet.Type), fmt.Sprintf("edit_%d", i)))
-		}
-		petOptions = append(petOptions, huh.NewOption("?O Add New Pet", "add"))
-		petOptions = append(petOptions, huh.NewOption("o- Back", "back"))
-
-		var action string
-		form := huh.NewForm(
-			huh.NewGroup(
-				huh.NewSelect[string]().
-					Title("Manage Pets").
-					Options(petOptions...).
-					Value(&action),
-			),
-		)
-
-		if err := form.Run(); err != nil || action == "back" {
+		m := petsview.NewModel(manager)
+		p := tea.NewProgram(m)
+		
+		mod, err := p.Run()
+		if err != nil {
+			fmt.Printf("Error running pet menu: %v\n", err)
 			return
 		}
 
+		petsModel, ok := mod.(petsview.Model)
+		if !ok || petsModel.GetAction() == "back" || petsModel.GetAction() == "" {
+			return
+		}
+
+		action := petsModel.GetAction()
+		
 		if action == "add" {
 			newPet := config.PetConfig{Type: "pishock"}
 			if runPetForm(&newPet) {
@@ -163,39 +157,24 @@ func editPetsConfig(manager *config.ConfigManager) {
 					c.Pets = append(c.Pets, newPet)
 				})
 			}
-		} else if strings.HasPrefix(action, "edit_") {
-			var idx int
-			fmt.Sscanf(action, "edit_%d", &idx)
-
+		} else if action == "edit" {
+			idx := petsModel.GetSelectedIdx()
+			cfg := manager.Get()
 			if idx >= 0 && idx < len(cfg.Pets) {
 				petToEdit := cfg.Pets[idx]
-
-				// Ask to edit or delete
-				var subAction string
-				huh.NewForm(
-					huh.NewGroup(
-						huh.NewSelect[string]().
-							Title(fmt.Sprintf("Pet: %s", petToEdit.Name)).
-							Options(
-								huh.NewOption("Edit", "edit"),
-								huh.NewOption("Delete", "delete"),
-								huh.NewOption("Cancel", "cancel"),
-							).
-							Value(&subAction),
-					),
-				).Run()
-
-				if subAction == "edit" {
-					if runPetForm(&petToEdit) {
-						manager.Update(func(c *config.Config) {
-							c.Pets[idx] = petToEdit
-						})
-					}
-				} else if subAction == "delete" {
+				if runPetForm(&petToEdit) {
 					manager.Update(func(c *config.Config) {
-						c.Pets = append(c.Pets[:idx], c.Pets[idx+1:]...)
+						c.Pets[idx] = petToEdit
 					})
 				}
+			}
+		} else if action == "delete" {
+			idx := petsModel.GetSelectedIdx()
+			cfg := manager.Get()
+			if idx >= 0 && idx < len(cfg.Pets) {
+				manager.Update(func(c *config.Config) {
+					c.Pets = append(c.Pets[:idx], c.Pets[idx+1:]...)
+				})
 			}
 		}
 	}
@@ -260,7 +239,7 @@ func runPetForm(pet *config.PetConfig) bool {
 }
 
 func runModCheck(manager *config.ConfigManager) {
-	err := mod.InstallMod()
+	err := plugin.InstallMod()
 
 	var message string
 	if err != nil {
@@ -306,7 +285,7 @@ func runServer(manager *config.ConfigManager) {
 		}
 	}
 
-	srv := server.NewServer(serverPort, pets, logChan)
+	srv := telemetry.NewServer(serverPort, pets, logChan)
 
 	// Context for graceful shutdown when we exit Bubbletea
 	ctx, cancel := context.WithCancel(context.Background())
@@ -320,7 +299,7 @@ func runServer(manager *config.ConfigManager) {
 	}()
 
 	// Start Bubbletea UI
-	m := cli.NewModel(logChan)
+	m := serverlog.NewModel(logChan)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
 	logChan <- fmt.Sprintf("Server initialized on port %d...", serverPort)

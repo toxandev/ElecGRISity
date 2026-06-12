@@ -1,4 +1,4 @@
-package mod
+package plugin
 
 import (
 	_ "embed"

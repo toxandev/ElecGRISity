@@ -1,30 +1,11 @@
-package cli
+package serverlog
 
 import (
 	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-)
-
-var (
-	titleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("#FAFAFA")).
-			Background(lipgloss.Color("#7D56F4")).
-			Padding(0, 1).
-			MarginBottom(1)
-
-	infoStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#04B575")).
-			MarginBottom(1)
-
-	logStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#383838")).
-			Padding(1, 2).
-			Width(70)
+	"telemetry-server/internal/tui/styles"
 )
 
 type logMsg string
@@ -87,9 +68,9 @@ func (m Model) View() string {
 	var b strings.Builder
 
 	b.WriteString("\n")
-	b.WriteString(titleStyle.Render("⚡ Game Telemetry Server & PiShock"))
+	b.WriteString(styles.Title.Render("⚡ Game Telemetry Server & PiShock"))
 	b.WriteString("\n")
-	b.WriteString(infoStyle.Render("Server is running. Press 'q' or 'ctrl+c' to stop and return to the menu."))
+	b.WriteString(styles.Info.Render("Server is running. Press 'q' or 'ctrl+c' to stop and return to the menu."))
 	b.WriteString("\n\n")
 
 	var logsStr strings.Builder
@@ -101,7 +82,7 @@ func (m Model) View() string {
 		}
 	}
 
-	b.WriteString(logStyle.Render(logsStr.String()))
+	b.WriteString(styles.Log.Render(logsStr.String()))
 	b.WriteString("\n")
 
 	return b.String()

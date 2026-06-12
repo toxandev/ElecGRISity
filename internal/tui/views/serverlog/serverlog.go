@@ -1,11 +1,10 @@
 package serverlog
 
 import (
-	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"telemetry-server/internal/tui/styles"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type logMsg string
@@ -14,6 +13,9 @@ type Model struct {
 	logs     []string
 	logChan  <-chan string
 	quitting bool
+	width    int
+	height   int
+	ready    bool
 }
 
 func NewModel(logChan <-chan string) Model {
@@ -42,6 +44,10 @@ func (m Model) waitForLog() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.ready = true
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
@@ -50,10 +56,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case logMsg:
 		m.logs = append(m.logs, string(msg))
-		// Keep the view clean with max 10 logs
-		if len(m.logs) > 10 {
-			m.logs = m.logs[len(m.logs)-10:]
-		}
 		return m, m.waitForLog()
 	}
 
@@ -65,25 +67,55 @@ func (m Model) View() string {
 		return "\nStopping server and returning to menu...\n"
 	}
 
-	var b strings.Builder
+	if !m.ready {
+		return "\nLoading..."
+	}
 
-	b.WriteString("\n")
-	b.WriteString(styles.Title.Render("⚡ Game Telemetry Server & PiShock"))
-	b.WriteString("\n")
-	b.WriteString(styles.Info.Render("Server is running. Press 'q' or 'ctrl+c' to stop and return to the menu."))
-	b.WriteString("\n\n")
+	titleStyle := lipgloss.NewStyle().
+		Width(m.width).
+		Padding(0, 1).
+		Bold(true).
+		Foreground(lipgloss.Color("#FAFAFA")).
+		Background(lipgloss.Color("#7D56F4"))
 
-	var logsStr strings.Builder
+	helpStyle := lipgloss.NewStyle().
+		Width(m.width).
+		Padding(0, 1).
+		Foreground(lipgloss.Color("#04B575"))
+
+	title := titleStyle.Render("⚡ May Gris thunder bless you all")
+	help := helpStyle.Render("Server is running. Press 'q' or 'ctrl+c' to stop and return to the menu.")
+	separator := strings.Repeat("─", m.width)
+
+	banner := title + "\n" + help + "\n" + separator + "\n"
+	bannerHeight := strings.Count(banner, "\n")
+
+	var logsContent string
 	if len(m.logs) == 0 {
-		logsStr.WriteString("Waiting for game events...\n")
+		logsContent = "Waiting for game events..."
 	} else {
+		var sb strings.Builder
 		for _, l := range m.logs {
-			logsStr.WriteString(fmt.Sprintf("• %s\n", l))
+			sb.WriteString("• ")
+			sb.WriteString(l)
+			sb.WriteString("\n")
+		}
+		logsContent = strings.TrimSuffix(sb.String(), "\n")
+	}
+
+	lines := strings.Split(logsContent, "\n")
+	availableHeight := m.height - bannerHeight
+
+	if len(lines) > availableHeight {
+		lines = lines[len(lines)-availableHeight:]
+	}
+
+	for i, line := range lines {
+		runes := []rune(line)
+		if len(runes) > m.width {
+			lines[i] = string(runes[:m.width])
 		}
 	}
 
-	b.WriteString(styles.Log.Render(logsStr.String()))
-	b.WriteString("\n")
-
-	return b.String()
+	return banner + strings.Join(lines, "\n")
 }

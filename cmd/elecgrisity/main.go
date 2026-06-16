@@ -105,8 +105,8 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 func editGeneralConfig(manager *config.ConfigManager) {
 	cfg := manager.Get()
 	logLevel := cfg.LogLevel
-	pUser := cfg.PiShockUsername
 	pKey := cfg.PiShockAPIKey
+	sID := cfg.ShockerID
 	pApp := cfg.PiShockAppName
 
 	form := huh.NewForm(
@@ -117,8 +117,8 @@ func editGeneralConfig(manager *config.ConfigManager) {
 				huh.NewOption("Warn", "warn"),
 				huh.NewOption("Error", "error"),
 			).Value(&logLevel),
-			huh.NewInput().Title("PiShock Username").Value(&pUser),
 			huh.NewInput().Title("PiShock API Key").Value(&pKey).EchoMode(huh.EchoModePassword),
+			huh.NewInput().Title("PiShock Shocker ID").Value(&sID),
 			huh.NewInput().Title("PiShock App Name").Value(&pApp),
 		),
 	).WithTheme(huh.ThemeDracula())
@@ -126,8 +126,8 @@ func editGeneralConfig(manager *config.ConfigManager) {
 	if err := form.Run(); err == nil {
 		manager.Update(func(c *config.Config) {
 			c.LogLevel = logLevel
-			c.PiShockUsername = pUser
 			c.PiShockAPIKey = pKey
+			c.ShockerID = sID
 			c.PiShockAppName = pApp
 		})
 	}
@@ -274,10 +274,8 @@ func runServer(manager *config.ConfigManager) {
 		if pc.Type == "pishock" {
 			pets[pc.Name] = &pet.PiShockPet{
 				Name:      pc.Name,
-				ShareCode: pc.ShareCode,
-				Username:  cfg.PiShockUsername,
 				APIKey:    cfg.PiShockAPIKey,
-				AppName:   cfg.PiShockAppName,
+				ShockerID: cfg.ShockerID,
 			}
 		} else if pc.Type == "lovense" {
 			pets[pc.Name] = &pet.LovensePet{

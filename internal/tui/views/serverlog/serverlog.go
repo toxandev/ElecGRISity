@@ -3,8 +3,8 @@ package serverlog
 import (
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type logMsg string
@@ -48,7 +48,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.ready = true
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
 			m.quitting = true
@@ -62,13 +62,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) View() string {
+func (m Model) View() tea.View {
 	if m.quitting {
-		return "\nStopping server and returning to menu...\n"
+		v := tea.NewView("\nStopping server and returning to menu...\n")
+		v.AltScreen = true
+		return v
 	}
 
 	if !m.ready {
-		return "\nLoading..."
+		v := tea.NewView("\nLoading...")
+		v.AltScreen = true
+		return v
 	}
 
 	titleStyle := lipgloss.NewStyle().
@@ -117,5 +121,7 @@ func (m Model) View() string {
 		}
 	}
 
-	return banner + strings.Join(lines, "\n")
+	v := tea.NewView(banner + strings.Join(lines, "\n"))
+	v.AltScreen = true
+	return v
 }

@@ -64,11 +64,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() tea.View {
 	if m.quitting {
-		return tea.NewView("\nStopping server and returning to menu...\n")
+		v := tea.NewView("\nStopping server and returning to menu...\n")
+		v.AltScreen = true
+		return v
 	}
 
 	if !m.ready {
-		return tea.NewView("\nLoading...")
+		v := tea.NewView("\nLoading...")
+		v.AltScreen = true
+		return v
 	}
 
 	titleStyle := lipgloss.NewStyle().
@@ -117,5 +121,7 @@ func (m Model) View() tea.View {
 		}
 	}
 
-	return tea.NewView(banner + strings.Join(lines, "\n"))
+	v := tea.NewView(banner + strings.Join(lines, "\n"))
+	v.AltScreen = true
+	return v
 }

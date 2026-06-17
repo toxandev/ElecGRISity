@@ -1,6 +1,6 @@
 package styles
 
-import "github.com/charmbracelet/lipgloss"
+import "charm.land/lipgloss/v2"
 
 var (
 	Title = lipgloss.NewStyle().
@@ -27,7 +27,7 @@ var (
 		MarginBottom(1).
 		Width(40)
 
-	SelectedCard = Card.Copy().
+	SelectedCard = Card.
 			BorderForeground(lipgloss.Color("#FF76B8")).
 			Background(lipgloss.Color("#2A2A2A"))
 
@@ -39,7 +39,7 @@ var (
 		Width(40).
 		Align(lipgloss.Center)
 
-	SelectedAddCard = AddCard.Copy().
+	SelectedAddCard = AddCard.
 			BorderForeground(lipgloss.Color("#04B575")).
 			Background(lipgloss.Color("#2A2A2A")).
 			Bold(true)
@@ -50,14 +50,14 @@ var (
 		Padding(0, 1).
 		MarginRight(1)
 
-	SelectedButton = Button.Copy().
+	SelectedButton = Button.
 			Background(lipgloss.Color("#FF76B8")).
 			Bold(true)
 
-	DeleteButton = Button.Copy().
+	DeleteButton = Button.
 			Background(lipgloss.Color("#E03131"))
 
-	SelectedDeleteButton = DeleteButton.Copy().
+	SelectedDeleteButton = DeleteButton.
 				Bold(true).
 				Foreground(lipgloss.Color("#FFF")).
 				Background(lipgloss.Color("#FF4B4B"))

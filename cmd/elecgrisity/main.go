@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
 
 	"telemetry-server/internal/config"
 	"telemetry-server/internal/pet"
@@ -121,7 +121,7 @@ func editGeneralConfig(manager *config.ConfigManager) {
 			huh.NewInput().Title("PiShock API Key").Value(&pKey).EchoMode(huh.EchoModePassword),
 			huh.NewInput().Title("PiShock App Name").Value(&pApp),
 		),
-	).WithTheme(huh.ThemeDracula())
+	).WithTheme(huh.ThemeFunc(huh.ThemeDracula))
 
 	if err := form.Run(); err == nil {
 		manager.Update(func(c *config.Config) {
@@ -136,7 +136,7 @@ func editGeneralConfig(manager *config.ConfigManager) {
 func editPetsConfig(manager *config.ConfigManager) {
 	for {
 		m := petsview.NewModel(manager)
-		p := tea.NewProgram(m, tea.WithAltScreen())
+		p := tea.NewProgram(m)
 
 		mod, err := p.Run()
 		if err != nil {
@@ -221,7 +221,7 @@ func runPetForm(pet *config.PetConfig) bool {
 				}, &pet.Type).
 				Value(&secret),
 		),
-	).WithTheme(huh.ThemeDracula())
+	).WithTheme(huh.ThemeFunc(huh.ThemeDracula))
 
 	err := form.Run()
 	if err == nil {
@@ -257,7 +257,7 @@ func runModCheck(manager *config.ConfigManager) {
 				Title("Mod Installation").
 				Description(message),
 		),
-	).WithTheme(huh.ThemeDracula())
+	).WithTheme(huh.ThemeFunc(huh.ThemeDracula))
 
 	form.Run()
 }
@@ -303,7 +303,7 @@ func runServer(manager *config.ConfigManager) {
 
 	// Start Bubbletea UI
 	m := serverlog.NewModel(logChan)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 
 	logChan <- fmt.Sprintf("Server initialized on port %d...", serverPort)
 

@@ -21,15 +21,19 @@ type Server struct {
 	logChannel          chan<- string
 	httpServer          *http.Server
 	mu                  sync.RWMutex
+	baseIntensity       float64
 	lastItemBuy         int
 	lastMoneyAddRequest pet.CommandRequest
+	shopOpenCounter     int
 }
 
 func NewServer(port int, pets map[string]pet.Pet, logChannel chan<- string) *Server {
 	return &Server{
-		port:       port,
-		pets:       pets,
-		logChannel: logChannel,
+		port:            port,
+		pets:            pets,
+		logChannel:      logChannel,
+		baseIntensity:   100,
+		shopOpenCounter: 0,
 	}
 }
 
@@ -44,33 +48,30 @@ func (s *Server) getLastMoneyAddRequest() pet.CommandRequest {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if s.lastMoneyAddRequest.Action == "" {
-		return pet.CommandRequest{
-			Action:    pet.ActionShock,
-			Intensity: 10,
-			Duration:  1,
-		}
+		// default
+		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 10), Duration: 100}
 	}
 	return s.lastMoneyAddRequest
 }
 
-func moneyAddRequestForItem(itemID int) pet.CommandRequest {
+func moneyAddRequestForItem(s *Server, itemID int) pet.CommandRequest {
 	switch itemID {
 	case 7: // feather purchase
-		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: 20, Duration: 100}
+		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.2), Duration: 100}
 	case 8: // needle purchase
-		return pet.CommandRequest{Action: pet.ActionShock, Intensity: 10, Duration: 200}
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 10), Duration: 200}
 	case 9: // hammer purchase
-		return pet.CommandRequest{Action: pet.ActionShock, Intensity: 25, Duration: 500}
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 25), Duration: 500}
 	case 10: // scissors purchase
-		return pet.CommandRequest{Action: pet.ActionShock, Intensity: 40, Duration: 1000}
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 40), Duration: 1000}
 	case 11: // match purchase
-		return pet.CommandRequest{Action: pet.ActionBeep, Intensity: 50, Duration: 2000}
+		return pet.CommandRequest{Action: pet.ActionBeep, Intensity: int(s.baseIntensity * 50), Duration: 2000}
 	case 12: // knife purchase
-		return pet.CommandRequest{Action: pet.ActionShock, Intensity: 75, Duration: 3000}
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 75), Duration: 3000}
 	case 13: // gun purchase
-		return pet.CommandRequest{Action: pet.ActionShock, Intensity: 100, Duration: 8000}
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 100), Duration: 8000}
 	default:
-		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: 10, Duration: 100}
+		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 10), Duration: 100}
 	}
 }
 
@@ -119,7 +120,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 	s.logChannel <- fmt.Sprintf("Event received: %s (Value: %d)", event.Event, event.Value)
 
 	if event.Event == "item_buy" {
-		itemRequest := moneyAddRequestForItem(event.Value)
+		itemRequest := moneyAddRequestForItem(s, event.Value)
 		s.setLastItemBuy(event.Value, itemRequest)
 
 		switch event.Value {
@@ -142,6 +143,16 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 		}
 
 		s.logChannel <- fmt.Sprintf("📌 money_add will use Action=%s, Intensity=%d, Duration=%d", itemRequest.Action, itemRequest.Intensity, itemRequest.Duration)
+		s.shopOpenCounter = 0 // reset counter after money_add event
+	}
+
+	// safe-word system to turn down intensity by a bit :)
+	if event.Event == "shop_open" {
+		s.shopOpenCounter++
+		if s.shopOpenCounter >= 3 {
+			s.baseIntensity -= 10
+			s.logChannel <- fmt.Sprintf("⚠️ Shop opened %d times, reducing base intensity to %f", s.shopOpenCounter, s.baseIntensity)
+		}
 	}
 
 	if event.Event == "money_add" {
@@ -157,6 +168,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 			}
 			break
 		}
+		s.shopOpenCounter = 0 // reset counter after money_add event
 	}
 
 	w.WriteHeader(http.StatusOK)

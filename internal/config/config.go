@@ -22,6 +22,7 @@ type PetConfig struct {
 
 type Config struct {
 	LogLevel        string      `yaml:"log_level" validate:"required,oneof=debug info warn error"`
+	Theme           string      `yaml:"theme" validate:"required,oneof=base base16 catppuccin charm dracula"`
 	PiShockUsername string      `yaml:"pishock_username"`
 	PiShockAPIKey   string      `yaml:"pishock_api_key"`
 	PiShockAppName  string      `yaml:"pishock_app_name"`
@@ -31,6 +32,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		LogLevel:        "info",
+		Theme:           "dracula",
 		PiShockUsername: "YourUsername",
 		PiShockAPIKey:   "your-api-key-here",
 		PiShockAppName:  "GolangPetController",

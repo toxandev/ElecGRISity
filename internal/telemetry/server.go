@@ -22,6 +22,7 @@ type Server struct {
 	httpServer          *http.Server
 	mu                  sync.RWMutex
 	baseIntensity       float64
+	clickCounter        int
 	lastItemBuy         int
 	lastMoneyAddRequest pet.CommandRequest
 	shopOpenCounter     int
@@ -33,6 +34,7 @@ func NewServer(port int, pets map[string]pet.Pet, logChannel chan<- string) *Ser
 		pets:            pets,
 		logChannel:      logChannel,
 		baseIntensity:   100,
+		clickCounter:    0,
 		shopOpenCounter: 0,
 	}
 }
@@ -156,17 +158,22 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if event.Event == "money_add" {
+		s.clickCounter++
 		request := s.getLastMoneyAddRequest()
-		for _, p := range s.pets {
-			s.logChannel <- fmt.Sprintf("⚡ Triggering action on %s! Action=%s Intensity=%d Duration=%d", p.GetName(), request.Action, request.Intensity, request.Duration)
 
-			err := p.SendCommand(request)
-			if err != nil {
-				s.logChannel <- fmt.Sprintf("❌ Failed to command %s: %v", p.GetName(), err)
-			} else {
-				s.logChannel <- fmt.Sprintf("✅ Successfully commanded %s", p.GetName())
+		// trigger shock every 25 clicks, or if the user has gun.
+		if s.clickCounter%25 == 0 || s.lastItemBuy == 13 {
+			for _, p := range s.pets {
+				s.logChannel <- fmt.Sprintf("⚡ Triggering action on %s! Action=%s Intensity=%d Duration=%d", p.GetName(), request.Action, request.Intensity, request.Duration)
+
+				err := p.SendCommand(request)
+				if err != nil {
+					s.logChannel <- fmt.Sprintf("❌ Failed to command %s: %v", p.GetName(), err)
+				} else {
+					s.logChannel <- fmt.Sprintf("✅ Successfully commanded %s", p.GetName())
+				}
+				break
 			}
-			break
 		}
 		s.shopOpenCounter = 0 // reset counter after money_add event
 	}

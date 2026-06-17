@@ -172,7 +172,7 @@
 
       // Smart event classification
       if (diff < 0 && ShopPurchaseEvents.includes(currentCeId)) {
-        sendTelemetry("item_buy", currentBalance, details);
+        sendTelemetry("item_buy", currentCeId, details);
       } else if (diff < 0) {
         sendTelemetry("money_remove", currentBalance, details);
       } else if (diff > 0) {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"telemetry-server/internal/config"
 	"telemetry-server/internal/tui/styles"
 )
@@ -32,7 +32,7 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "q", "esc":
 			m.action = "back"
@@ -72,7 +72,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) View() string {
+func (m Model) View() tea.View {
 	var b strings.Builder
 
 	b.WriteString("\n" + styles.Title.Render("🐾 Manage Pets") + "\n\n")
@@ -117,7 +117,9 @@ func (m Model) View() string {
 	b.WriteString("\n" + styles.Info.Render("↑/↓: Select Pet • ←/→: Select Action • Enter: Confirm • Esc/q: Back"))
 	b.WriteString("\n")
 
-	return b.String()
+	v := tea.NewView(b.String())
+	v.AltScreen = true
+	return v
 }
 
 func (m Model) GetAction() string {

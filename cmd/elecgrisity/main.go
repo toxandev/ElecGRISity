@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
 
 	"telemetry-server/internal/config"
 	"telemetry-server/internal/pet"
@@ -19,6 +21,35 @@ import (
 )
 
 const serverPort = 42069
+
+// formKeyMap returns a KeyMap with ESC and Ctrl+C bound to quit/abort.
+func formKeyMap() *huh.KeyMap {
+	km := huh.NewDefaultKeyMap()
+	km.Quit = key.NewBinding(key.WithKeys("ctrl+c", "esc"))
+	return km
+}
+
+// clearScreen erases the terminal and moves the cursor to the top-left.
+// Called after every huh form to prevent inline rendering artifacts.
+func clearScreen() {
+	fmt.Fprint(os.Stdout, "\033[H\033[2J\033[3J")
+}
+
+// resolveTheme returns the huh Theme matching the config value.
+func resolveTheme(name string) huh.Theme {
+	switch name {
+	case "base16":
+		return huh.ThemeFunc(huh.ThemeBase16)
+	case "catppuccin":
+		return huh.ThemeFunc(huh.ThemeCatppuccin)
+	case "charm":
+		return huh.ThemeFunc(huh.ThemeCharm)
+	case "dracula":
+		return huh.ThemeFunc(huh.ThemeDracula)
+	default:
+		return huh.ThemeFunc(huh.ThemeBase)
+	}
+}
 
 func main() {
 	cfgFile := "config.yaml"
@@ -32,10 +63,11 @@ func main() {
 		var action string
 
 		// Main Menu
+		theme := resolveTheme(manager.Get().Theme)
 		form := huh.NewForm(
 			huh.NewGroup(
 				huh.NewSelect[string]().
-					Title("⚡ PiShock Game Telemetry").
+					Title("⚡Elecgrisity⚡").
 					Description("Choose an action:").
 					Options(
 						huh.NewOption("⏯️ Start Server", "start"),
@@ -45,11 +77,12 @@ func main() {
 					).
 					Value(&action),
 			),
-		)
+		).WithTheme(theme).WithKeyMap(formKeyMap())
 
 		err := form.Run()
+		clearScreen()
 		if err != nil || action == "exit" {
-			fmt.Println("\nGoodbye!")
+			fmt.Println("Goodbye!")
 			break
 		}
 
@@ -66,6 +99,7 @@ func main() {
 func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 	for {
 		var action string
+		theme := resolveTheme(manager.Get().Theme)
 		form := huh.NewForm(
 			huh.NewGroup(
 				huh.NewSelect[string]().
@@ -79,17 +113,19 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 					).
 					Value(&action),
 			),
-		)
+		).WithTheme(theme).WithKeyMap(formKeyMap())
 
-		if err := form.Run(); err != nil || action == "cancel" {
+		err := form.Run()
+		clearScreen()
+		if err != nil || action == "cancel" {
 			return
 		}
 
 		if action == "save" {
 			if err := manager.Save(cfgFile); err != nil {
-				fmt.Printf("\nError saving config: %v\n", err)
+				fmt.Printf("Error saving config: %v\n", err)
 			} else {
-				fmt.Println("\nConfiguration saved successfully!")
+				fmt.Println("Configuration saved successfully!")
 			}
 			return
 		}
@@ -117,15 +153,27 @@ func editGeneralConfig(manager *config.ConfigManager) {
 				huh.NewOption("Warn", "warn"),
 				huh.NewOption("Error", "error"),
 			).Value(&logLevel),
+			huh.NewSelect[string]().Title("Theme").Options(
+				huh.NewOption("Base", "base"),
+				huh.NewOption("Base16", "base16"),
+				huh.NewOption("Catppuccin", "catppuccin"),
+				huh.NewOption("Charm", "charm"),
+				huh.NewOption("Dracula", "dracula"),
+			).Value(&themeName),
+			huh.NewInput().Title("PiShock Username").Value(&pUser),
 			huh.NewInput().Title("PiShock API Key").Value(&pKey).EchoMode(huh.EchoModePassword),
 			huh.NewInput().Title("PiShock Shocker ID").Value(&sID),
 			huh.NewInput().Title("PiShock App Name").Value(&pApp),
 		),
-	).WithTheme(huh.ThemeDracula())
+	).WithTheme(resolveTheme(cfg.Theme)).
+		WithKeyMap(formKeyMap())
 
-	if err := form.Run(); err == nil {
+	err := form.Run()
+	clearScreen()
+	if err == nil {
 		manager.Update(func(c *config.Config) {
 			c.LogLevel = logLevel
+			c.Theme = themeName
 			c.PiShockAPIKey = pKey
 			c.ShockerID = sID
 			c.PiShockAppName = pApp
@@ -136,7 +184,7 @@ func editGeneralConfig(manager *config.ConfigManager) {
 func editPetsConfig(manager *config.ConfigManager) {
 	for {
 		m := petsview.NewModel(manager)
-		p := tea.NewProgram(m, tea.WithAltScreen())
+		p := tea.NewProgram(m)
 
 		mod, err := p.Run()
 		if err != nil {
@@ -153,7 +201,7 @@ func editPetsConfig(manager *config.ConfigManager) {
 
 		if action == "add" {
 			newPet := config.PetConfig{Type: "pishock"}
-			if runPetForm(&newPet) {
+			if runPetForm(manager, &newPet) {
 				manager.Update(func(c *config.Config) {
 					c.Pets = append(c.Pets, newPet)
 				})
@@ -163,7 +211,7 @@ func editPetsConfig(manager *config.ConfigManager) {
 			cfg := manager.Get()
 			if idx >= 0 && idx < len(cfg.Pets) {
 				petToEdit := cfg.Pets[idx]
-				if runPetForm(&petToEdit) {
+				if runPetForm(manager, &petToEdit) {
 					manager.Update(func(c *config.Config) {
 						c.Pets[idx] = petToEdit
 					})
@@ -181,7 +229,7 @@ func editPetsConfig(manager *config.ConfigManager) {
 	}
 }
 
-func runPetForm(pet *config.PetConfig) bool {
+func runPetForm(manager *config.ConfigManager, pet *config.PetConfig) bool {
 	if pet.Type == "" {
 		pet.Type = "pishock"
 	}
@@ -221,9 +269,11 @@ func runPetForm(pet *config.PetConfig) bool {
 				}, &pet.Type).
 				Value(&secret),
 		),
-	).WithTheme(huh.ThemeDracula())
+	).WithTheme(resolveTheme(manager.Get().Theme)).
+		WithKeyMap(formKeyMap())
 
 	err := form.Run()
+	clearScreen()
 	if err == nil {
 		if pet.Type == "pishock" {
 			pet.ShareCode = id
@@ -257,9 +307,11 @@ func runModCheck(manager *config.ConfigManager) {
 				Title("Mod Installation").
 				Description(message),
 		),
-	).WithTheme(huh.ThemeDracula())
+	).WithTheme(resolveTheme(manager.Get().Theme)).
+		WithKeyMap(formKeyMap())
 
 	form.Run()
+	clearScreen()
 }
 
 func runServer(manager *config.ConfigManager) {
@@ -301,7 +353,7 @@ func runServer(manager *config.ConfigManager) {
 
 	// Start Bubbletea UI
 	m := serverlog.NewModel(logChan)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 
 	logChan <- fmt.Sprintf("Server initialized on port %d...", serverPort)
 

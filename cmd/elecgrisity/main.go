@@ -67,7 +67,7 @@ func main() {
 		form := huh.NewForm(
 			huh.NewGroup(
 				huh.NewSelect[string]().
-					Title("⚡ PiShock Game Telemetry").
+					Title("⚡Elecgrisity⚡").
 					Description("Choose an action:").
 					Options(
 						huh.NewOption("⏯️ Start Server", "start"),

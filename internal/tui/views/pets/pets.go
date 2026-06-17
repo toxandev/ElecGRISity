@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"telemetry-server/internal/config"
 	"telemetry-server/internal/tui/styles"
+
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type Model struct {
@@ -83,7 +84,7 @@ func (m Model) View() tea.View {
 		content.WriteString(fmt.Sprintf("Type: %s\n", pet.Type))
 
 		if pet.Type == "pishock" {
-			content.WriteString(fmt.Sprintf("Share Code: %s\n", pet.ShareCode))
+			content.WriteString(fmt.Sprintf("PiShock API Key: %s\nID: %s\n", pet.PiShockAPIKey, pet.ShockerID))
 		} else if pet.Type == "lovense" {
 			content.WriteString(fmt.Sprintf("Lovense ID: %s\nIP: %s\n", pet.LovenseID, pet.LovenseIP))
 		}

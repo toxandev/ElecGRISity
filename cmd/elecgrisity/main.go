@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
-	"charm.land/bubbles/v2/key"
 
 	"telemetry-server/internal/config"
 	"telemetry-server/internal/pet"
@@ -28,6 +28,22 @@ func formKeyMap() *huh.KeyMap {
 	return km
 }
 
+// resolveTheme returns the huh Theme matching the config value.
+func resolveTheme(name string) huh.Theme {
+	switch name {
+	case "base16":
+		return huh.ThemeFunc(huh.ThemeBase16)
+	case "catppuccin":
+		return huh.ThemeFunc(huh.ThemeCatppuccin)
+	case "charm":
+		return huh.ThemeFunc(huh.ThemeCharm)
+	case "dracula":
+		return huh.ThemeFunc(huh.ThemeDracula)
+	default:
+		return huh.ThemeFunc(huh.ThemeBase)
+	}
+}
+
 func main() {
 	cfgFile := "config.yaml"
 	manager := config.NewConfigManager()
@@ -40,6 +56,7 @@ func main() {
 		var action string
 
 		// Main Menu
+		theme := resolveTheme(manager.Get().Theme)
 		form := huh.NewForm(
 			huh.NewGroup(
 				huh.NewSelect[string]().
@@ -53,7 +70,7 @@ func main() {
 					).
 					Value(&action),
 			),
-		).WithKeyMap(formKeyMap())
+		).WithTheme(theme).WithKeyMap(formKeyMap())
 
 		err := form.Run()
 		if err != nil || action == "exit" {
@@ -74,6 +91,7 @@ func main() {
 func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 	for {
 		var action string
+		theme := resolveTheme(manager.Get().Theme)
 		form := huh.NewForm(
 			huh.NewGroup(
 				huh.NewSelect[string]().
@@ -87,7 +105,7 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 					).
 					Value(&action),
 			),
-		).WithKeyMap(formKeyMap())
+		).WithTheme(theme).WithKeyMap(formKeyMap())
 
 		if err := form.Run(); err != nil || action == "cancel" {
 			return
@@ -113,6 +131,7 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 func editGeneralConfig(manager *config.ConfigManager) {
 	cfg := manager.Get()
 	logLevel := cfg.LogLevel
+	themeName := cfg.Theme
 	pUser := cfg.PiShockUsername
 	pKey := cfg.PiShockAPIKey
 	pApp := cfg.PiShockAppName
@@ -125,16 +144,24 @@ func editGeneralConfig(manager *config.ConfigManager) {
 				huh.NewOption("Warn", "warn"),
 				huh.NewOption("Error", "error"),
 			).Value(&logLevel),
+			huh.NewSelect[string]().Title("Theme").Options(
+				huh.NewOption("Base", "base"),
+				huh.NewOption("Base16", "base16"),
+				huh.NewOption("Catppuccin", "catppuccin"),
+				huh.NewOption("Charm", "charm"),
+				huh.NewOption("Dracula", "dracula"),
+			).Value(&themeName),
 			huh.NewInput().Title("PiShock Username").Value(&pUser),
 			huh.NewInput().Title("PiShock API Key").Value(&pKey).EchoMode(huh.EchoModePassword),
 			huh.NewInput().Title("PiShock App Name").Value(&pApp),
 		),
-	).WithTheme(huh.ThemeFunc(huh.ThemeDracula)).
+	).WithTheme(resolveTheme(cfg.Theme)).
 		WithKeyMap(formKeyMap())
 
 	if err := form.Run(); err == nil {
 		manager.Update(func(c *config.Config) {
 			c.LogLevel = logLevel
+			c.Theme = themeName
 			c.PiShockUsername = pUser
 			c.PiShockAPIKey = pKey
 			c.PiShockAppName = pApp
@@ -162,7 +189,7 @@ func editPetsConfig(manager *config.ConfigManager) {
 
 		if action == "add" {
 			newPet := config.PetConfig{Type: "pishock"}
-			if runPetForm(&newPet) {
+			if runPetForm(manager, &newPet) {
 				manager.Update(func(c *config.Config) {
 					c.Pets = append(c.Pets, newPet)
 				})
@@ -172,7 +199,7 @@ func editPetsConfig(manager *config.ConfigManager) {
 			cfg := manager.Get()
 			if idx >= 0 && idx < len(cfg.Pets) {
 				petToEdit := cfg.Pets[idx]
-				if runPetForm(&petToEdit) {
+				if runPetForm(manager, &petToEdit) {
 					manager.Update(func(c *config.Config) {
 						c.Pets[idx] = petToEdit
 					})
@@ -190,7 +217,7 @@ func editPetsConfig(manager *config.ConfigManager) {
 	}
 }
 
-func runPetForm(pet *config.PetConfig) bool {
+func runPetForm(manager *config.ConfigManager, pet *config.PetConfig) bool {
 	if pet.Type == "" {
 		pet.Type = "pishock"
 	}
@@ -230,7 +257,7 @@ func runPetForm(pet *config.PetConfig) bool {
 				}, &pet.Type).
 				Value(&secret),
 		),
-	).WithTheme(huh.ThemeFunc(huh.ThemeDracula)).
+	).WithTheme(resolveTheme(manager.Get().Theme)).
 		WithKeyMap(formKeyMap())
 
 	err := form.Run()
@@ -267,7 +294,7 @@ func runModCheck(manager *config.ConfigManager) {
 				Title("Mod Installation").
 				Description(message),
 		),
-	).WithTheme(huh.ThemeFunc(huh.ThemeDracula)).
+	).WithTheme(resolveTheme(manager.Get().Theme)).
 		WithKeyMap(formKeyMap())
 
 	form.Run()

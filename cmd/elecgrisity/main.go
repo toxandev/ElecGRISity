@@ -141,6 +141,7 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 func editGeneralConfig(manager *config.ConfigManager) {
 	cfg := manager.Get()
 	logLevel := cfg.LogLevel
+	themeName := cfg.Theme
 	pKey := cfg.PiShockAPIKey
 	sID := cfg.ShockerID
 	pApp := cfg.PiShockAppName
@@ -160,7 +161,6 @@ func editGeneralConfig(manager *config.ConfigManager) {
 				huh.NewOption("Charm", "charm"),
 				huh.NewOption("Dracula", "dracula"),
 			).Value(&themeName),
-			huh.NewInput().Title("PiShock Username").Value(&pUser),
 			huh.NewInput().Title("PiShock API Key").Value(&pKey).EchoMode(huh.EchoModePassword),
 			huh.NewInput().Title("PiShock Shocker ID").Value(&sID),
 			huh.NewInput().Title("PiShock App Name").Value(&pApp),

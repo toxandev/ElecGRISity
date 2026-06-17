@@ -22,23 +22,22 @@ type PetConfig struct {
 
 type Config struct {
 	LogLevel        string      `yaml:"log_level" validate:"required,oneof=debug info warn error"`
-	PiShockUsername string      `yaml:"pishock_username"`
 	PiShockAPIKey   string      `yaml:"pishock_api_key"`
 	PiShockAppName  string      `yaml:"pishock_app_name"`
+	ShockerID		string		`yaml:"pishock_shocker_id"`
 	Pets            []PetConfig `yaml:"pets" validate:"dive"`
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		LogLevel:        "info",
-		PiShockUsername: "YourUsername",
-		PiShockAPIKey:   "your-api-key-here",
-		PiShockAppName:  "GolangPetController",
+		LogLevel:		"info",
+		PiShockAPIKey:	"your-api-key-here",
+		PiShockAppName:	"GolangPetController",
+		ShockerID:		"shocker-id-here",
 		Pets: []PetConfig{
 			{
 				Name:      "DefaultShock",
 				Type:      "pishock",
-				ShareCode: "SHARE_CODE_HERE",
 			},
 		},
 	}

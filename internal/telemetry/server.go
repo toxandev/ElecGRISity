@@ -51,7 +51,7 @@ func (s *Server) getLastMoneyAddRequest() pet.CommandRequest {
 	defer s.mu.RUnlock()
 	if s.lastMoneyAddRequest.Action == "" {
 		// default
-		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 10), Duration: 100}
+		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.1), Duration: 100}
 	}
 	return s.lastMoneyAddRequest
 }
@@ -61,19 +61,19 @@ func moneyAddRequestForItem(s *Server, itemID int) pet.CommandRequest {
 	case 7: // feather purchase
 		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.2), Duration: 100}
 	case 8: // needle purchase
-		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 10), Duration: 200}
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 0.1), Duration: 200}
 	case 9: // hammer purchase
-		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 25), Duration: 500}
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 0.25), Duration: 500}
 	case 10: // scissors purchase
-		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 40), Duration: 1000}
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 0.4), Duration: 1000}
 	case 11: // match purchase
-		return pet.CommandRequest{Action: pet.ActionBeep, Intensity: int(s.baseIntensity * 50), Duration: 2000}
+		return pet.CommandRequest{Action: pet.ActionBeep, Intensity: int(s.baseIntensity * 0.5), Duration: 2000}
 	case 12: // knife purchase
-		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 75), Duration: 3000}
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 0.75), Duration: 3000}
 	case 13: // gun purchase
-		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 100), Duration: 8000}
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 1.0), Duration: 8000}
 	default:
-		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 10), Duration: 100}
+		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.1), Duration: 100}
 	}
 }
 

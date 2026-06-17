@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"telemetry-server/internal/pet"
 )
 
@@ -15,10 +16,13 @@ type GameEvent struct {
 }
 
 type Server struct {
-	port       int
-	pets       map[string]pet.Pet
-	logChannel chan<- string
-	httpServer *http.Server
+	port                int
+	pets                map[string]pet.Pet
+	logChannel          chan<- string
+	httpServer          *http.Server
+	mu                  sync.RWMutex
+	lastItemBuy         int
+	lastMoneyAddRequest pet.CommandRequest
 }
 
 func NewServer(port int, pets map[string]pet.Pet, logChannel chan<- string) *Server {
@@ -26,6 +30,47 @@ func NewServer(port int, pets map[string]pet.Pet, logChannel chan<- string) *Ser
 		port:       port,
 		pets:       pets,
 		logChannel: logChannel,
+	}
+}
+
+func (s *Server) setLastItemBuy(itemID int, req pet.CommandRequest) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.lastItemBuy = itemID
+	s.lastMoneyAddRequest = req
+}
+
+func (s *Server) getLastMoneyAddRequest() pet.CommandRequest {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.lastMoneyAddRequest.Action == "" {
+		return pet.CommandRequest{
+			Action:    pet.ActionShock,
+			Intensity: 10,
+			Duration:  1,
+		}
+	}
+	return s.lastMoneyAddRequest
+}
+
+func moneyAddRequestForItem(itemID int) pet.CommandRequest {
+	switch itemID {
+	case 7: // feather purchase
+		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: 15, Duration: 2}
+	case 8: // needle purchase
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: 25, Duration: 1}
+	case 9: // hammer purchase
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: 40, Duration: 2}
+	case 10: // scissors purchase
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: 50, Duration: 2}
+	case 11: // match purchase
+		return pet.CommandRequest{Action: pet.ActionBeep, Intensity: 20, Duration: 1}
+	case 12: // knife purchase
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: 60, Duration: 3}
+	case 13: // gun purchase
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: 80, Duration: 4}
+	default:
+		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: 10, Duration: 1}
 	}
 }
 
@@ -73,18 +118,38 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 
 	s.logChannel <- fmt.Sprintf("Event received: %s (Value: %d)", event.Event, event.Value)
 
-	if event.Event == "damage" {
+	if event.Event == "item_buy" {
+		itemRequest := moneyAddRequestForItem(event.Value)
+		s.setLastItemBuy(event.Value, itemRequest)
+
+		switch event.Value {
+		case 7: // feather purchase
+			s.logChannel <- "🛒 Detected purchase of Item C!"
+		case 8: // needle purchase
+			s.logChannel <- "🛒 Detected purchase of Needle!"
+		case 9: // hammer purchase
+			s.logChannel <- "🛒 Detected purchase of Hammer!"
+		case 10: // scissors purchase
+			s.logChannel <- "🛒 Detected purchase of Scissors!"
+		case 11: // match purchase
+			s.logChannel <- "🛒 Detected purchase of Match!"
+		case 12: // knife purchase
+			s.logChannel <- "🛒 Detected purchase of Knife!"
+		case 13: // gun purchase
+			s.logChannel <- "🛒 Detected purchase of Gun!"
+		default:
+			s.logChannel <- fmt.Sprintf("🛒 Detected purchase of unknown item (ID: %d)", event.Value)
+		}
+
+		s.logChannel <- fmt.Sprintf("📌 money_add will use Action=%s, Intensity=%d, Duration=%d", itemRequest.Action, itemRequest.Intensity, itemRequest.Duration)
+	}
+
+	if event.Event == "money_add" {
+		request := s.getLastMoneyAddRequest()
 		for _, p := range s.pets {
-			s.logChannel <- fmt.Sprintf("⚡ Triggering action on %s! (Intensity: %d)", p.GetName(), event.Value)
+			s.logChannel <- fmt.Sprintf("⚡ Triggering action on %s! Action=%s Intensity=%d Duration=%d", p.GetName(), request.Action, request.Intensity, request.Duration)
 
-			req := pet.CommandRequest{
-				Action:    pet.ActionShock,
-				Intensity: event.Value,
-				Duration:  1,
-			}
-
-			err := p.SendCommand(req)
-
+			err := p.SendCommand(request)
 			if err != nil {
 				s.logChannel <- fmt.Sprintf("❌ Failed to command %s: %v", p.GetName(), err)
 			} else {

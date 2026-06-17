@@ -142,8 +142,6 @@ func editGeneralConfig(manager *config.ConfigManager) {
 	cfg := manager.Get()
 	logLevel := cfg.LogLevel
 	themeName := cfg.Theme
-	pKey := cfg.PiShockAPIKey
-	sID := cfg.ShockerID
 	pApp := cfg.PiShockAppName
 
 	form := huh.NewForm(
@@ -161,8 +159,6 @@ func editGeneralConfig(manager *config.ConfigManager) {
 				huh.NewOption("Charm", "charm"),
 				huh.NewOption("Dracula", "dracula"),
 			).Value(&themeName),
-			huh.NewInput().Title("PiShock API Key").Value(&pKey).EchoMode(huh.EchoModePassword),
-			huh.NewInput().Title("PiShock Shocker ID").Value(&sID),
 			huh.NewInput().Title("PiShock App Name").Value(&pApp),
 		),
 	).WithTheme(resolveTheme(cfg.Theme)).
@@ -174,8 +170,6 @@ func editGeneralConfig(manager *config.ConfigManager) {
 		manager.Update(func(c *config.Config) {
 			c.LogLevel = logLevel
 			c.Theme = themeName
-			c.PiShockAPIKey = pKey
-			c.ShockerID = sID
 			c.PiShockAppName = pApp
 		})
 	}
@@ -234,7 +228,7 @@ func runPetForm(manager *config.ConfigManager, pet *config.PetConfig) bool {
 		pet.Type = "pishock"
 	}
 
-	id := pet.ShareCode
+	id := ""
 	if pet.Type == "lovense" {
 		id = pet.LovenseID
 	}
@@ -255,7 +249,7 @@ func runPetForm(manager *config.ConfigManager, pet *config.PetConfig) bool {
 			huh.NewInput().
 				TitleFunc(func() string {
 					if pet.Type == "pishock" {
-						return "Share Code (ID)"
+						return "Shocker ID"
 					}
 					return "Lovense ID (ID)"
 				}, &pet.Type).
@@ -263,7 +257,7 @@ func runPetForm(manager *config.ConfigManager, pet *config.PetConfig) bool {
 			huh.NewInput().
 				TitleFunc(func() string {
 					if pet.Type == "pishock" {
-						return "Secret (Not used for PiShock)"
+						return "API Key"
 					}
 					return "Lovense IP (Secret)"
 				}, &pet.Type).
@@ -276,13 +270,15 @@ func runPetForm(manager *config.ConfigManager, pet *config.PetConfig) bool {
 	clearScreen()
 	if err == nil {
 		if pet.Type == "pishock" {
-			pet.ShareCode = id
 			pet.LovenseID = ""
 			pet.LovenseIP = ""
+			pet.ShockerID = id
+			pet.PiShockAPIKey = secret
 		} else {
 			pet.LovenseID = id
 			pet.LovenseIP = secret
-			pet.ShareCode = ""
+			pet.ShockerID = ""
+			pet.PiShockAPIKey = ""
 		}
 		return true
 	}
@@ -326,9 +322,10 @@ func runServer(manager *config.ConfigManager) {
 		if pc.Type == "pishock" {
 			pets[pc.Name] = &pet.PiShockPet{
 				Name:      pc.Name,
-				APIKey:    cfg.PiShockAPIKey,
-				ShockerID: cfg.ShockerID,
+				APIKey:    pc.PiShockAPIKey,
+				ShockerID: pc.ShockerID,
 			}
+			logChan <- fmt.Sprintf("Initialized PiShock pet: %s, ShockerID: %s, APIKey: %s", pc.Name, pc.ShockerID, pc.PiShockAPIKey)
 		} else if pc.Type == "lovense" {
 			pets[pc.Name] = &pet.LovensePet{
 				Name:      pc.Name,

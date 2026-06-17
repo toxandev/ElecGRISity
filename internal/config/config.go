@@ -13,19 +13,18 @@ import (
 var validate = validator.New()
 
 type PetConfig struct {
-	Name      string `yaml:"name" validate:"required"`
-	Type      string `yaml:"type" validate:"required,oneof=pishock lovense"`
-	ShareCode string `yaml:"share_code,omitempty"` // For PiShock
-	LovenseID string `yaml:"lovense_id,omitempty"` // For Lovense
-	LovenseIP string `yaml:"lovense_ip,omitempty"` // For Lovense (local IP)
+	Name          string `yaml:"name" validate:"required"`
+	Type          string `yaml:"type" validate:"required,oneof=pishock lovense"`
+	LovenseID     string `yaml:"lovense_id,omitempty"`         // For Lovense
+	LovenseIP     string `yaml:"lovense_ip,omitempty"`         // For Lovense (local IP)
+	PiShockAPIKey string `yaml:"pishock_api_key,omitempty"`    // For PiShock user
+	ShockerID     string `yaml:"pishock_shocker_id,omitempty"` // per PiShock collar
 }
 
 type Config struct {
 	LogLevel       string      `yaml:"log_level" validate:"required,oneof=debug info warn error"`
 	Theme          string      `yaml:"theme" validate:"omitempty,oneof=base base16 catppuccin charm dracula"`
-	PiShockAPIKey  string      `yaml:"pishock_api_key"`
 	PiShockAppName string      `yaml:"pishock_app_name"`
-	ShockerID      string      `yaml:"pishock_shocker_id"`
 	Pets           []PetConfig `yaml:"pets" validate:"dive"`
 }
 
@@ -33,9 +32,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		LogLevel:       "info",
 		Theme:          "dracula",
-		PiShockAPIKey:  "your-api-key-here",
 		PiShockAppName: "GolangPetController",
-		ShockerID:      "shocker-id-here",
 		Pets: []PetConfig{
 			{
 				Name: "DefaultShock",

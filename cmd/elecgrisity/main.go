@@ -325,7 +325,7 @@ func runServer(manager *config.ConfigManager) {
 				APIKey:    pc.PiShockAPIKey,
 				ShockerID: pc.ShockerID,
 			}
-			logChan <- fmt.Sprintf("Initialized PiShock pet: %s, ShockerID: %s, APIKey: %s", pc.Name, pc.ShockerID, pc.PiShockAPIKey)
+			logChan <- fmt.Sprintf("Initialized PiShock pet: %s, ShockerID: %s, APIKey: %s", pc.Name, pc.ShockerID, pc.PiShockAPIKey[0:4]+"****")
 		} else if pc.Type == "lovense" {
 			pets[pc.Name] = &pet.LovensePet{
 				Name:      pc.Name,

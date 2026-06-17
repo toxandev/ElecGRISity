@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"time"
 )
 
 // PiShock op codes
@@ -17,21 +19,18 @@ const (
 // PiShockPet implements the Pet interface for a PiShock device
 type PiShockPet struct {
 	Name      string
-	ShareCode string
-	Username  string
 	APIKey    string
-	AppName   string
+	ShockerID string
 }
 
-// apiPayload is the JSON format required by PiShock
 type apiPayload struct {
-	Username  string `json:"Username"`
-	APIKey    string `json:"APIKey"`
-	Code      string `json:"Code"`
-	Name      string `json:"Name"`
-	Op        int    `json:"Op"`
-	Intensity int    `json:"Intensity"`
-	Duration  int    `json:"Duration"`
+	AgentName             string `json:"AgentName"`
+	Operation             int    `json:"Operation"`
+	Duration              int    `json:"Duration"`
+	Intensity             int    `json:"Intensity"`
+	MinimumDuration       int    `json:"MinimumDuration"`
+	MinimumIntensity      int    `json:"MinimumIntensity"`
+	IntensityAsPercentage bool   `json:"IntensityAsPercentage"`
 }
 
 func (p *PiShockPet) GetName() string {
@@ -53,31 +52,55 @@ func (p *PiShockPet) SendCommand(req CommandRequest) error {
 		op = OpBeep
 	}
 
+	durationMs := req.Duration
+	if durationMs <= 0 {
+		durationMs = 1000
+	} else if durationMs < 16 {
+		durationMs *= 1000
+	}
+
+	intensity := req.Intensity
+	if intensity <= 0 {
+		intensity = 10
+	}
+
 	payload := apiPayload{
-		Username:  p.Username,
-		APIKey:    p.APIKey,
-		Code:      p.ShareCode,
-		Name:      p.AppName,
-		Op:        op,
-		Intensity: req.Intensity,
-		Duration:  req.Duration,
+		AgentName:             p.Name,
+		Operation:             op,
+		Duration:              durationMs,
+		Intensity:             intensity,
+		MinimumDuration:       durationMs,
+		MinimumIntensity:      intensity,
+		IntensityAsPercentage: false,
 	}
 
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
+	url := "https://api.pishock.com/Shockers/" + p.ShockerID
+	postReq, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	postReq.Header.Set("Content-Type", "application/json;charset=UTF-8")
+	postReq.Header.Set("X-PiShock-Api-Key", p.APIKey)
 
-	resp, err := http.Post("https://do.pishock.com/api/apioperate/", "application/json", bytes.NewBuffer(jsonData))
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	resp, err := client.Do(postReq)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusOK {
-		fmt.Printf("PiShock %s: Successfully sent %s signal\n", p.Name, req.Action)
+	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent {
+		fmt.Printf("PiShock %s: Successfully sent %s signal, intensity: %d, duration: %d ms\n", p.Name, req.Action, intensity, durationMs)
 	} else {
-		return fmt.Errorf("PiShock %s: Failed to send signal. Status: %d", p.Name, resp.StatusCode)
+		return fmt.Errorf("PiShock %s: Failed to send signal. Status: %d, body: %s", p.Name, resp.StatusCode, string(body))
 	}
 
 	return nil

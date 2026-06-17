@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
@@ -26,6 +27,12 @@ func formKeyMap() *huh.KeyMap {
 	km := huh.NewDefaultKeyMap()
 	km.Quit = key.NewBinding(key.WithKeys("ctrl+c", "esc"))
 	return km
+}
+
+// clearScreen erases the terminal and moves the cursor to the top-left.
+// Called after every huh form to prevent inline rendering artifacts.
+func clearScreen() {
+	fmt.Fprint(os.Stdout, "\033[H\033[2J\033[3J")
 }
 
 // resolveTheme returns the huh Theme matching the config value.
@@ -73,8 +80,9 @@ func main() {
 		).WithTheme(theme).WithKeyMap(formKeyMap())
 
 		err := form.Run()
+		clearScreen()
 		if err != nil || action == "exit" {
-			fmt.Println("\nGoodbye!")
+			fmt.Println("Goodbye!")
 			break
 		}
 
@@ -107,15 +115,17 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 			),
 		).WithTheme(theme).WithKeyMap(formKeyMap())
 
-		if err := form.Run(); err != nil || action == "cancel" {
+		err := form.Run()
+		clearScreen()
+		if err != nil || action == "cancel" {
 			return
 		}
 
 		if action == "save" {
 			if err := manager.Save(cfgFile); err != nil {
-				fmt.Printf("\nError saving config: %v\n", err)
+				fmt.Printf("Error saving config: %v\n", err)
 			} else {
-				fmt.Println("\nConfiguration saved successfully!")
+				fmt.Println("Configuration saved successfully!")
 			}
 			return
 		}
@@ -158,7 +168,9 @@ func editGeneralConfig(manager *config.ConfigManager) {
 	).WithTheme(resolveTheme(cfg.Theme)).
 		WithKeyMap(formKeyMap())
 
-	if err := form.Run(); err == nil {
+	err := form.Run()
+	clearScreen()
+	if err == nil {
 		manager.Update(func(c *config.Config) {
 			c.LogLevel = logLevel
 			c.Theme = themeName
@@ -261,6 +273,7 @@ func runPetForm(manager *config.ConfigManager, pet *config.PetConfig) bool {
 		WithKeyMap(formKeyMap())
 
 	err := form.Run()
+	clearScreen()
 	if err == nil {
 		if pet.Type == "pishock" {
 			pet.ShareCode = id
@@ -298,6 +311,7 @@ func runModCheck(manager *config.ConfigManager) {
 		WithKeyMap(formKeyMap())
 
 	form.Run()
+	clearScreen()
 }
 
 func runServer(manager *config.ConfigManager) {

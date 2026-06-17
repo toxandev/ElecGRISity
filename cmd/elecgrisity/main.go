@@ -8,6 +8,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
+	"charm.land/bubbles/v2/key"
 
 	"telemetry-server/internal/config"
 	"telemetry-server/internal/pet"
@@ -19,6 +20,13 @@ import (
 )
 
 const serverPort = 42069
+
+// formKeyMap returns a KeyMap with ESC and Ctrl+C bound to quit/abort.
+func formKeyMap() *huh.KeyMap {
+	km := huh.NewDefaultKeyMap()
+	km.Quit = key.NewBinding(key.WithKeys("ctrl+c", "esc"))
+	return km
+}
 
 func main() {
 	cfgFile := "config.yaml"
@@ -45,7 +53,7 @@ func main() {
 					).
 					Value(&action),
 			),
-		)
+		).WithKeyMap(formKeyMap())
 
 		err := form.Run()
 		if err != nil || action == "exit" {
@@ -79,7 +87,7 @@ func runConfigMenu(manager *config.ConfigManager, cfgFile string) {
 					).
 					Value(&action),
 			),
-		)
+		).WithKeyMap(formKeyMap())
 
 		if err := form.Run(); err != nil || action == "cancel" {
 			return
@@ -121,7 +129,8 @@ func editGeneralConfig(manager *config.ConfigManager) {
 			huh.NewInput().Title("PiShock API Key").Value(&pKey).EchoMode(huh.EchoModePassword),
 			huh.NewInput().Title("PiShock App Name").Value(&pApp),
 		),
-	).WithTheme(huh.ThemeFunc(huh.ThemeDracula))
+	).WithTheme(huh.ThemeFunc(huh.ThemeDracula)).
+		WithKeyMap(formKeyMap())
 
 	if err := form.Run(); err == nil {
 		manager.Update(func(c *config.Config) {
@@ -221,7 +230,8 @@ func runPetForm(pet *config.PetConfig) bool {
 				}, &pet.Type).
 				Value(&secret),
 		),
-	).WithTheme(huh.ThemeFunc(huh.ThemeDracula))
+	).WithTheme(huh.ThemeFunc(huh.ThemeDracula)).
+		WithKeyMap(formKeyMap())
 
 	err := form.Run()
 	if err == nil {
@@ -257,7 +267,8 @@ func runModCheck(manager *config.ConfigManager) {
 				Title("Mod Installation").
 				Description(message),
 		),
-	).WithTheme(huh.ThemeFunc(huh.ThemeDracula))
+	).WithTheme(huh.ThemeFunc(huh.ThemeDracula)).
+		WithKeyMap(formKeyMap())
 
 	form.Run()
 }

@@ -74,7 +74,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ready = true
 	case tea.KeyPressMsg:
 		switch msg.String() {
-		case "q", "ctrl+c":
+		case "q", "ctrl+c", "esc":
 			m.quitting = true
 			return m, tea.Quit
 		}
@@ -115,7 +115,7 @@ func (m Model) View() tea.View {
 		Foreground(lipgloss.Color("#04B575"))
 
 	title := titleStyle.Render("⚡ May Gris lightning bless you all")
-	help := helpStyle.Render("Server is running. Press 'q' or 'ctrl+c' to stop and return to the menu.")
+	help := helpStyle.Render("Server is running. Press 'esc', 'q' or 'ctrl+c' to stop and return to the menu.")
 	separator := strings.Repeat("─", m.width)
 
 	banner := title + "\n" + help + "\n" + separator + "\n"

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sync"
 	"telemetry-server/internal/pet"
+	"time"
 )
 
 type GameEvent struct {
@@ -26,6 +27,7 @@ type Server struct {
 	lastItemBuy         int
 	lastMoneyAddRequest pet.CommandRequest
 	shopOpenCounter     int
+	fearCancel          context.CancelFunc
 }
 
 func NewServer(port int, pets map[string]pet.Pet, logChannel chan<- string) *Server {
@@ -155,6 +157,11 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 			s.baseIntensity -= 10
 			s.logChannel <- fmt.Sprintf("⚠️ Shop opened %d times, reducing base intensity to %f", s.shopOpenCounter, s.baseIntensity)
 		}
+		s.startFearAura()
+	}
+
+	if event.Event == "shop_close" {
+		s.stopFearAura()
 	}
 
 	if event.Event == "money_add" {
@@ -180,4 +187,55 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"ok"}`))
+}
+
+func (s *Server) startFearAura() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.fearCancel != nil {
+		s.fearCancel()
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	s.fearCancel = cancel
+
+	s.logChannel <- "👻 Fear aura started — light vibration while shop is open"
+
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+
+		sendFear := func() {
+			req := pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.1), Duration: 1000}
+			for _, p := range s.pets {
+				err := p.SendCommand(req)
+				if err != nil {
+					s.logChannel <- fmt.Sprintf("❌ Fear aura failed on %s: %v", p.GetName(), err)
+				}
+				break
+			}
+		}
+
+		sendFear()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				sendFear()
+			}
+		}
+	}()
+}
+
+func (s *Server) stopFearAura() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.fearCancel != nil {
+		s.fearCancel()
+		s.fearCancel = nil
+		s.logChannel <- "👻 Fear aura stopped — shop closed"
+	}
 }

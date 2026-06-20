@@ -87,7 +87,7 @@ func (m Model) View() tea.View {
 		Padding(0, 1).
 		Foreground(lipgloss.Color("#04B575"))
 
-	title := titleStyle.Render("⚡ May Gris thunder bless you all")
+	title := titleStyle.Render("⚡ May Gris lightning bless you all")
 	help := helpStyle.Render("Server is running. Press 'q' or 'ctrl+c' to stop and return to the menu.")
 	separator := strings.Repeat("─", m.width)
 

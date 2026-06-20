@@ -59,21 +59,21 @@ func (s *Server) getLastMoneyAddRequest() pet.CommandRequest {
 func moneyAddRequestForItem(s *Server, itemID int) pet.CommandRequest {
 	switch itemID {
 	case 7: // feather purchase
-		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.2), Duration: 100}
+		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.2), Duration: 300}
 	case 8: // needle purchase
-		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 0.1), Duration: 200}
+		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 0.1), Duration: 300}
 	case 9: // hammer purchase
 		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 0.25), Duration: 500}
 	case 10: // scissors purchase
 		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 0.4), Duration: 1000}
 	case 11: // match purchase
-		return pet.CommandRequest{Action: pet.ActionBeep, Intensity: int(s.baseIntensity * 0.5), Duration: 2000}
+		return pet.CommandRequest{Action: pet.ActionBeep, Intensity: int(s.baseIntensity * 0.6), Duration: 2000}
 	case 12: // knife purchase
 		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 0.75), Duration: 3000}
 	case 13: // gun purchase
 		return pet.CommandRequest{Action: pet.ActionShock, Intensity: int(s.baseIntensity * 1.0), Duration: 8000}
 	default:
-		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.1), Duration: 100}
+		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.1), Duration: 300}
 	}
 }
 

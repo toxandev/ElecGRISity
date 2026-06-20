@@ -53,7 +53,7 @@ func (s *Server) getLastMoneyAddRequest() pet.CommandRequest {
 	defer s.mu.RUnlock()
 	if s.lastMoneyAddRequest.Action == "" {
 		// default
-		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.1), Duration: 100}
+		return pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.1), Duration: 300}
 	}
 	return s.lastMoneyAddRequest
 }

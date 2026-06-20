@@ -142,7 +142,6 @@ func editGeneralConfig(manager *config.ConfigManager) {
 	cfg := manager.Get()
 	logLevel := cfg.LogLevel
 	themeName := cfg.Theme
-	pApp := cfg.PiShockAppName
 
 	form := huh.NewForm(
 		huh.NewGroup(
@@ -159,7 +158,6 @@ func editGeneralConfig(manager *config.ConfigManager) {
 				huh.NewOption("Charm", "charm"),
 				huh.NewOption("Dracula", "dracula"),
 			).Value(&themeName),
-			huh.NewInput().Title("PiShock App Name").Value(&pApp),
 		),
 	).WithTheme(resolveTheme(cfg.Theme)).
 		WithKeyMap(formKeyMap())
@@ -170,7 +168,6 @@ func editGeneralConfig(manager *config.ConfigManager) {
 		manager.Update(func(c *config.Config) {
 			c.LogLevel = logLevel
 			c.Theme = themeName
-			c.PiShockAppName = pApp
 		})
 	}
 }
@@ -325,7 +322,11 @@ func runServer(manager *config.ConfigManager) {
 				APIKey:    pc.PiShockAPIKey,
 				ShockerID: pc.ShockerID,
 			}
-			logChan <- fmt.Sprintf("Initialized PiShock pet: %s, ShockerID: %s, APIKey: %s", pc.Name, pc.ShockerID, pc.PiShockAPIKey[0:4]+"****")
+			maskedKey := "****"
+			if len(pc.PiShockAPIKey) >= 4 {
+				maskedKey = pc.PiShockAPIKey[0:4] + "****"
+			}
+			logChan <- fmt.Sprintf("Initialized PiShock pet: %s, ShockerID: %s, APIKey: %s", pc.Name, pc.ShockerID, maskedKey)
 		} else if pc.Type == "lovense" {
 			pets[pc.Name] = &pet.LovensePet{
 				Name:      pc.Name,

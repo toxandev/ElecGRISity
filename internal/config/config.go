@@ -22,21 +22,21 @@ type PetConfig struct {
 }
 
 type Config struct {
-	LogLevel       string      `yaml:"log_level" validate:"required,oneof=debug info warn error"`
-	Theme          string      `yaml:"theme" validate:"omitempty,oneof=base base16 catppuccin charm dracula"`
-	PiShockAppName string      `yaml:"pishock_app_name"`
-	Pets           []PetConfig `yaml:"pets" validate:"dive"`
+	LogLevel string      `yaml:"log_level" validate:"required,oneof=debug info warn error"`
+	Theme    string      `yaml:"theme" validate:"omitempty,oneof=base base16 catppuccin charm dracula"`
+	Pets     []PetConfig `yaml:"pets" validate:"dive"`
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		LogLevel:       "info",
-		Theme:          "dracula",
-		PiShockAppName: "GolangPetController",
+		LogLevel: "info",
+		Theme:    "base",
 		Pets: []PetConfig{
 			{
-				Name: "DefaultShock",
-				Type: "pishock",
+				Name:          "MyFirstPet",
+				Type:          "pishock",
+				PiShockAPIKey: "ABCD1234",
+				ShockerID:     "123456",
 			},
 		},
 	}

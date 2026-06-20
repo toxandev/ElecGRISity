@@ -203,11 +203,11 @@ func (s *Server) startFearAura() {
 	s.logChannel <- "👻 Fear aura started — light vibration while shop is open"
 
 	go func() {
-		ticker := time.NewTicker(5 * time.Second)
+		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 
 		sendFear := func() {
-			req := pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.1), Duration: 4000}
+			req := pet.CommandRequest{Action: pet.ActionVibrate, Intensity: int(s.baseIntensity * 0.1), Duration: 1000}
 			for _, p := range s.pets {
 				err := p.SendCommand(req)
 				if err != nil {

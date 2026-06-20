@@ -9,8 +9,8 @@ import (
 	"charm.land/huh/v2"
 
 	"telemetry-server/internal/config"
+	"telemetry-server/internal/gamelink"
 	"telemetry-server/internal/pet"
-	"telemetry-server/internal/telemetry"
 	"telemetry-server/internal/tui"
 
 	configview "telemetry-server/internal/tui/views/config"
@@ -94,7 +94,7 @@ func runServer(manager *config.ConfigManager) {
 		}
 	}
 
-	srv := telemetry.NewServer(serverPort, pets, logChan)
+	srv := gamelink.NewServer(serverPort, pets, logChan)
 
 	// Context for graceful shutdown when we exit Bubbletea
 	ctx, cancel := context.WithCancel(context.Background())

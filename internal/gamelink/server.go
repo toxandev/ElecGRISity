@@ -1,4 +1,4 @@
-package telemetry
+package gamelink
 
 import (
 	"context"
@@ -99,7 +99,7 @@ func (s *Server) Start(ctx context.Context) error {
 		return err
 	}
 
-	s.logChannel <- fmt.Sprintf("Listening for game telemetry on %s", addr)
+	s.logChannel <- fmt.Sprintf("Listening for game events on %s", addr)
 
 	if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
 		return err
@@ -127,7 +127,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 
 		switch event.Value {
 		case 7: // feather purchase
-			s.logChannel <- "🛒 Detected purchase of Item C!"
+			s.logChannel <- "🛒 Detected purchase of Item Feather!"
 		case 8: // needle purchase
 			s.logChannel <- "🛒 Detected purchase of Needle!"
 		case 9: // hammer purchase

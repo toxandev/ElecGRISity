@@ -1,5 +1,5 @@
 /*:
- * @plugindesc Smart Event Sender - Sends telemetry events to a local Go API.
+ * @plugindesc Smart Event Sender - Sends game events to a local Go API.
  * @help
  * This plugin (formerly WalletLogger) listens to the game engine and sends
  * the following events via PUT requests:
@@ -43,14 +43,14 @@
   // Hook: Plugin and game startup
   // ======================================================================
   // When the script is read (the engine starts)
-  sendTelemetry("plugin_loaded", 0, { status: "ready" });
+  sendGameEvent("plugin_loaded", 0, { status: "ready" });
 
   // Replace DataManager with Scene_Title for "New Game"
   var _Scene_Title_commandNewGame = Scene_Title.prototype.commandNewGame;
   Scene_Title.prototype.commandNewGame = function () {
     _Scene_Title_commandNewGame.call(this);
     var startBalance = $gameVariables.value(walletVariableId) || 0;
-    sendTelemetry("game_started", startBalance, { type: "new_game" });
+    sendGameEvent("game_started", startBalance, { type: "new_game" });
   };
 
   // Replace DataManager with Scene_Load for "Load Game"
@@ -58,13 +58,13 @@
   Scene_Load.prototype.onLoadSuccess = function () {
     _Scene_Load_onLoadSuccess.call(this);
     var loadedBalance = $gameVariables.value(walletVariableId) || 0;
-    sendTelemetry("game_started", loadedBalance, { type: "load_game" });
+    sendGameEvent("game_started", loadedBalance, { type: "load_game" });
   };
 
   // ======================================================================
   // Send function to the Go API
   // ======================================================================
-  function sendTelemetry(eventName, balance, extraData) {
+  function sendGameEvent(eventName, balance, extraData) {
     var payload = {
       event: eventName,
       value: balance,
@@ -97,7 +97,7 @@
     var currentBalance = $gameVariables.value(walletVariableId);
 
     if (CommonEventTriggers[eventId]) {
-      sendTelemetry(CommonEventTriggers[eventId], currentBalance, {
+      sendGameEvent(CommonEventTriggers[eventId], currentBalance, {
         commonEventId: eventId,
       });
     }
@@ -172,11 +172,11 @@
 
       // Smart event classification
       if (diff < 0 && ShopPurchaseEvents.includes(currentCeId)) {
-        sendTelemetry("item_buy", currentCeId, details);
+        sendGameEvent("item_buy", currentCeId, details);
       } else if (diff < 0) {
-        sendTelemetry("money_remove", currentBalance, details);
+        sendGameEvent("money_remove", currentBalance, details);
       } else if (diff > 0) {
-        sendTelemetry("money_add", currentBalance, details);
+        sendGameEvent("money_add", currentBalance, details);
       }
     }
   };

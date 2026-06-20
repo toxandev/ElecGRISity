@@ -19,7 +19,7 @@ type GameEvent struct {
 type Server struct {
 	port                int
 	pets                map[string]pet.Pet
-	logChannel          chan<- string
+	logChannel          chan<- LogEntry
 	httpServer          *http.Server
 	mu                  sync.RWMutex
 	baseIntensity       float64
@@ -30,7 +30,7 @@ type Server struct {
 	fearCancel          context.CancelFunc
 }
 
-func NewServer(port int, pets map[string]pet.Pet, logChannel chan<- string) *Server {
+func NewServer(port int, pets map[string]pet.Pet, logChannel chan<- LogEntry) *Server {
 	return &Server{
 		port:            port,
 		pets:            pets,
@@ -97,11 +97,11 @@ func (s *Server) Start(ctx context.Context) error {
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		s.logChannel <- fmt.Sprintf("❌ Failed to bind %s: %v", addr, err)
+		s.logChannel <- LogEntry{Level: LogError, Message: fmt.Sprintf("Failed to bind %s: %v", addr, err)}
 		return err
 	}
 
-	s.logChannel <- fmt.Sprintf("Listening for game events on %s", addr)
+	s.logChannel <- LogEntry{Level: LogInfo, Emoji: "📡", Message: fmt.Sprintf("Listening for game events on %s", addr)}
 
 	if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
 		return err
@@ -121,7 +121,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.logChannel <- fmt.Sprintf("Event received: %s (Value: %d)", event.Event, event.Value)
+	s.logChannel <- LogEntry{Level: LogDebug, Message: fmt.Sprintf("Event received: %s (Value: %d)", event.Event, event.Value)}
 
 	if event.Event == "item_buy" {
 		itemRequest := moneyAddRequestForItem(s, event.Value)
@@ -129,24 +129,24 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 
 		switch event.Value {
 		case 7: // feather purchase
-			s.logChannel <- "🛒 Detected purchase of Item Feather!"
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Item Feather!"}
 		case 8: // needle purchase
-			s.logChannel <- "🛒 Detected purchase of Needle!"
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Needle!"}
 		case 9: // hammer purchase
-			s.logChannel <- "🛒 Detected purchase of Hammer!"
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Hammer!"}
 		case 10: // scissors purchase
-			s.logChannel <- "🛒 Detected purchase of Scissors!"
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Scissors!"}
 		case 11: // match purchase
-			s.logChannel <- "🛒 Detected purchase of Match!"
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Match!"}
 		case 12: // knife purchase
-			s.logChannel <- "🛒 Detected purchase of Knife!"
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Knife!"}
 		case 13: // gun purchase
-			s.logChannel <- "🛒 Detected purchase of Gun!"
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🔫", Message: "Detected purchase of Gun!"}
 		default:
-			s.logChannel <- fmt.Sprintf("🛒 Detected purchase of unknown item (ID: %d)", event.Value)
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: fmt.Sprintf("Detected purchase of unknown item (ID: %d)", event.Value)}
 		}
 
-		s.logChannel <- fmt.Sprintf("📌 money_add will use Action=%s, Intensity=%d, Duration=%d", itemRequest.Action, itemRequest.Intensity, itemRequest.Duration)
+		s.logChannel <- LogEntry{Level: LogDebug, Emoji: "📌", Message: fmt.Sprintf("money_add will use Action=%s, Intensity=%d, Duration=%d", itemRequest.Action, itemRequest.Intensity, itemRequest.Duration)}
 		s.shopOpenCounter = 0 // reset counter after money_add event
 	}
 
@@ -155,7 +155,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 		s.shopOpenCounter++
 		if s.shopOpenCounter >= 3 {
 			s.baseIntensity -= 10
-			s.logChannel <- fmt.Sprintf("⚠️ Shop opened %d times, reducing base intensity to %f", s.shopOpenCounter, s.baseIntensity)
+			s.logChannel <- LogEntry{Level: LogWarn, Message: fmt.Sprintf("Shop opened %d times, reducing base intensity to %f", s.shopOpenCounter, s.baseIntensity)}
 		}
 		s.startFearAura()
 	}
@@ -171,13 +171,13 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 		// trigger shock every 25 clicks, or if the user has gun.
 		if s.clickCounter%25 == 0 || s.lastItemBuy == 13 {
 			for _, p := range s.pets {
-				s.logChannel <- fmt.Sprintf("⚡ Triggering action on %s! Action=%s Intensity=%d Duration=%d", p.GetName(), request.Action, request.Intensity, request.Duration)
+				s.logChannel <- LogEntry{Level: LogInfo, Emoji: "⚡", Message: fmt.Sprintf("Triggering action on %s! Action=%s Intensity=%d Duration=%d", p.GetName(), request.Action, request.Intensity, request.Duration)}
 
 				err := p.SendCommand(request)
 				if err != nil {
-					s.logChannel <- fmt.Sprintf("❌ Failed to command %s: %v", p.GetName(), err)
+					s.logChannel <- LogEntry{Level: LogError, Message: fmt.Sprintf("Failed to command %s: %v", p.GetName(), err)}
 				} else {
-					s.logChannel <- fmt.Sprintf("✅ Successfully commanded %s", p.GetName())
+					s.logChannel <- LogEntry{Level: LogDebug, Emoji: "✅", Message: fmt.Sprintf("Successfully commanded %s", p.GetName())}
 				}
 				break
 			}
@@ -200,7 +200,7 @@ func (s *Server) startFearAura() {
 	ctx, cancel := context.WithCancel(context.Background())
 	s.fearCancel = cancel
 
-	s.logChannel <- "👻 Fear aura started — light vibration while shop is open"
+	s.logChannel <- LogEntry{Level: LogInfo, Emoji: "👻", Message: "Fear aura started — light vibration while shop is open"}
 
 	go func() {
 		ticker := time.NewTicker(10 * time.Second)
@@ -211,7 +211,7 @@ func (s *Server) startFearAura() {
 			for _, p := range s.pets {
 				err := p.SendCommand(req)
 				if err != nil {
-					s.logChannel <- fmt.Sprintf("❌ Fear aura failed on %s: %v", p.GetName(), err)
+					s.logChannel <- LogEntry{Level: LogError, Emoji: "👻", Message: fmt.Sprintf("Fear aura failed on %s: %v", p.GetName(), err)}
 				}
 				break
 			}
@@ -236,6 +236,6 @@ func (s *Server) stopFearAura() {
 	if s.fearCancel != nil {
 		s.fearCancel()
 		s.fearCancel = nil
-		s.logChannel <- "👻 Fear aura stopped — shop closed"
+		s.logChannel <- LogEntry{Level: LogInfo, Emoji: "👻", Message: "Fear aura stopped — shop closed"}
 	}
 }

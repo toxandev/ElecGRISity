@@ -1,27 +1,51 @@
 package serverlog
 
 import (
+	"fmt"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+
+	"telemetry-server/internal/gamelink"
 )
 
-type logMsg string
+func formatLog(entry gamelink.LogEntry) string {
+	var color string
+	switch entry.Level {
+	case gamelink.LogDebug:
+		color = "#888888"
+	case gamelink.LogInfo:
+		color = "#04B575"
+	case gamelink.LogWarn:
+		color = "#FFAA00"
+	case gamelink.LogError:
+		color = "#FF4444"
+	default:
+		color = "#FFFFFF"
+	}
+	emoji := entry.ResolvedEmoji()
+	msg := lipgloss.NewStyle().Foreground(lipgloss.Color(color)).Render(entry.Message)
+	return fmt.Sprintf("%s %s", emoji, msg)
+}
+
+type logMsg gamelink.LogEntry
 
 type Model struct {
 	logs     []string
-	logChan  <-chan string
+	logChan  <-chan gamelink.LogEntry
+	minLevel gamelink.LogLevel
 	quitting bool
 	width    int
 	height   int
 	ready    bool
 }
 
-func NewModel(logChan <-chan string) Model {
+func NewModel(logChan <-chan gamelink.LogEntry, minLevel gamelink.LogLevel) Model {
 	return Model{
-		logs:    make([]string, 0),
-		logChan: logChan,
+		logs:     make([]string, 0),
+		logChan:  logChan,
+		minLevel: minLevel,
 	}
 }
 
@@ -34,11 +58,11 @@ func (m Model) waitForLog() tea.Cmd {
 		if m.logChan == nil {
 			return nil
 		}
-		logText, ok := <-m.logChan
+		entry, ok := <-m.logChan
 		if !ok {
 			return nil
 		}
-		return logMsg(logText)
+		return logMsg(entry)
 	}
 }
 
@@ -55,7 +79,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	case logMsg:
-		m.logs = append(m.logs, string(msg))
+		entry := gamelink.LogEntry(msg)
+		if entry.Level >= m.minLevel {
+			m.logs = append(m.logs, formatLog(entry))
+		}
 		return m, m.waitForLog()
 	}
 

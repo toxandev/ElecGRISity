@@ -69,7 +69,7 @@ func runServer(manager *config.ConfigManager) {
 	cfg := manager.Get()
 
 	// Channel for Bubbletea to display logs
-	logChan := make(chan string, 100)
+	logChan := make(chan gamelink.LogEntry, 100)
 
 	// Initialize Pets from Configuration
 	pets := make(map[string]pet.Pet)
@@ -84,7 +84,7 @@ func runServer(manager *config.ConfigManager) {
 			if len(pc.PiShockAPIKey) >= 4 {
 				maskedKey = pc.PiShockAPIKey[0:4] + "****"
 			}
-			logChan <- fmt.Sprintf("Initialized PiShock pet: %s, ShockerID: %s, APIKey: %s", pc.Name, pc.ShockerID, maskedKey)
+   logChan <- gamelink.LogEntry{Level: gamelink.LogInfo, Emoji: "🐾", Message: fmt.Sprintf("Initialized PiShock pet: %s, ShockerID: %s, APIKey: %s", pc.Name, pc.ShockerID, maskedKey)}
 		} else if pc.Type == "lovense" {
 			pets[pc.Name] = &pet.LovensePet{
 				Name:      pc.Name,
@@ -103,15 +103,16 @@ func runServer(manager *config.ConfigManager) {
 	// Start web server asynchronously
 	go func() {
 		if err := srv.Start(ctx); err != nil {
-			logChan <- fmt.Sprintf("Server stopped: %v", err)
+			logChan <- gamelink.LogEntry{Level: gamelink.LogError, Message: fmt.Sprintf("Server stopped: %v", err)}
 		}
 	}()
 
 	// Start Bubbletea UI
-	m := serverlog.NewModel(logChan)
+	minLevel := gamelink.ParseLogLevel(cfg.LogLevel)
+	m := serverlog.NewModel(logChan, minLevel)
 	p := tea.NewProgram(m)
 
-	logChan <- fmt.Sprintf("Server initialized on port %d...", serverPort)
+ logChan <- gamelink.LogEntry{Level: gamelink.LogInfo, Emoji: "⚡", Message: fmt.Sprintf("Server initialized on port %d...", serverPort)}
 
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error running UI: %v\n", err)

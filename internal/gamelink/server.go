@@ -129,19 +129,19 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 
 		switch event.Value {
 		case 7: // feather purchase
-			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Item Feather!"}
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Purchased Feather!"}
 		case 8: // needle purchase
-			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Needle!"}
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Purchased Needle!"}
 		case 9: // hammer purchase
-			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Hammer!"}
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Purchased Hammer!"}
 		case 10: // scissors purchase
-			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Scissors!"}
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Purchased Scissors!"}
 		case 11: // match purchase
-			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Match!"}
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Purchased Match!"}
 		case 12: // knife purchase
-			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Detected purchase of Knife!"}
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: "Purchased Knife!"}
 		case 13: // gun purchase
-			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🔫", Message: "Detected purchase of Gun!"}
+			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🔫", Message: "Purchased Gun!"}
 		default:
 			s.logChannel <- LogEntry{Level: LogInfo, Emoji: "🛒", Message: fmt.Sprintf("Detected purchase of unknown item (ID: %d)", event.Value)}
 		}
@@ -171,7 +171,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, r *http.Request) {
 		// trigger shock every 25 clicks, or if the user has gun.
 		if s.clickCounter%25 == 0 || s.lastItemBuy == 13 {
 			for _, p := range s.pets {
-				s.logChannel <- LogEntry{Level: LogInfo, Emoji: "⚡", Message: fmt.Sprintf("Triggering action on %s! Action=%s Intensity=%d Duration=%d", p.GetName(), request.Action, request.Intensity, request.Duration)}
+				s.logChannel <- LogEntry{Level: LogInfo, Emoji: "⚡", Message: fmt.Sprintf("Triggering action on %s! Action=%s Intensity=%d Duration=%.1fs", p.GetName(), request.Action, request.Intensity/10, float64(request.Duration)/1000)}
 
 				err := p.SendCommand(request)
 				if err != nil {

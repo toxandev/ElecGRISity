@@ -98,10 +98,8 @@ func (p *PiShockPet) SendCommand(req CommandRequest) error {
 	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent {
-		fmt.Printf("PiShock %s: Successfully sent %s signal, intensity: %d, duration: %d ms\n", p.Name, req.Action, intensity, durationMs)
-	} else {
-		return fmt.Errorf("PiShock %s: Failed to send signal. Status: %d, body: %s", p.Name, resp.StatusCode, string(body))
+		return nil
 	}
 
-	return nil
+	return fmt.Errorf("PiShock %s: Failed to send signal. Status: %d, body: %s", p.Name, resp.StatusCode, string(body))
 }
